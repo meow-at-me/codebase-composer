@@ -235,17 +235,17 @@ function updateUI(data) {
 
 function getMockData() {
   return {
-    workspaceName: "ros2_ws",
-    summary: { totalFiles: 84, totalLines: 12450, directories: 18, mainLanguage: "python" },
+    workspaceName: "demo-workspace",
+    summary: { totalFiles: 84, totalLines: 12450, directories: 18, mainLanguage: "javascript" },
     languages: {
-      python: { files: 32, lines: 6800 },
-      cpp: { files: 12, lines: 4100 },
-      javascript: { files: 8, lines: 950 },
+      javascript: { files: 32, lines: 6800 },
+      css: { files: 12, lines: 4100 },
+      html: { files: 8, lines: 950 },
       markdown: { files: 6, lines: 600 },
       other: { files: 26, lines: 0 }
     },
     recentFiles: [
-      { name: "talker_node.py", size: 2314, lines: 84, lang: "python" }
+      { name: "app.js", size: 2314, lines: 84, lang: "javascript" }
     ]
   };
 }
@@ -1008,7 +1008,8 @@ closeHelpBtn.addEventListener('click', () => {
 });
 
 // --- Directory Explorer Navigation ---
-let explorerPath = '/home/user';
+// Start empty; the server resolves an OS-appropriate default and returns it as currentPath.
+let explorerPath = '';
 
 async function loadDirectories(dirPath) {
   try {
@@ -1098,7 +1099,8 @@ browseBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   const isOpen = explorerDropdown.classList.toggle('open');
   if (isOpen) {
-    const current = scanPathInput.value.trim() || '/home/user';
+    // Empty string lets the server pick an OS-appropriate default directory.
+    const current = scanPathInput.value.trim();
     loadDirectories(current);
   }
 });

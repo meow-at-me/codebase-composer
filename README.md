@@ -1,5 +1,7 @@
 # Codebase Lo-Fi Synth Station 🎧
 
+![Codebase Lo-Fi Synth Station](assets/main_figure.png)
+
 A beautiful, interactive web application that reads any local codebase structure, file stats, and directory mapping, then converts it into a unique, custom-made **procedural Lo-Fi soundtrack** in real-time.
 
 It features two synthesis modes:
