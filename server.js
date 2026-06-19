@@ -124,8 +124,28 @@ function scanWorkspace(dirPath, rootDir = dirPath) {
 
 // Scans the workspace directory
 app.get('/api/codebase', (req, res) => {
-  // Check if scanning a specific directory passed in query
-  const targetDir = req.query.path ? path.resolve(req.query.path) : path.dirname(__dirname);
+  const defaultDir = path.dirname(__dirname); // /home/user
+  let targetDir = defaultDir;
+  
+  if (req.query.path) {
+    let p = req.query.path.trim();
+    // Resolve home directory shortener
+    if (p.startsWith('~')) {
+      p = p.replace('~', defaultDir);
+    }
+    // Resolve relative path against user workspace root (/home/user)
+    if (!path.isAbsolute(p)) {
+      targetDir = path.resolve(defaultDir, p);
+    } else {
+      targetDir = path.resolve(p);
+    }
+  }
+
+  // Fallback to defaultDir if the resolved path does not exist
+  if (!fs.existsSync(targetDir)) {
+    return res.status(404).json({ error: `Directory not found: ${targetDir}` });
+  }
+
   const codebaseData = scanWorkspace(targetDir);
   codebaseData.workspaceName = path.basename(targetDir);
   codebaseData.workspacePath = targetDir;

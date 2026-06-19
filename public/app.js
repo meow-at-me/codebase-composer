@@ -566,6 +566,13 @@ scanBtn.addEventListener('click', async () => {
   logToConsole('Sync scan applied in real-time!', 'system');
 });
 
+// Trigger scan on Enter key press
+scanPathInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    scanBtn.click();
+  }
+});
+
 
 // Initial Scan on Load
 window.addEventListener('load', () => {
