@@ -221,6 +221,7 @@ function initializeAudio() {
   
   // Prevent CPU audio glitches by setting buffer latency hint to playback
   Tone.context.latencyHint = "playback";
+  Tone.context.lookAhead = 0.15; // Increased schedule window for stutter-free playback
   
   limiter = new Tone.Limiter(-1).toDestination();
   mainFilter = new Tone.Filter(850, "lowpass").connect(limiter);
@@ -232,7 +233,7 @@ function initializeAudio() {
   analyser = new Tone.Analyser("fft", 256);
   mainFilter.connect(analyser);
 
-  volAmbient = new Tone.Volume(-25).connect(mainFilter);
+  volAmbient = new Tone.Volume(-60).connect(mainFilter); // Muted by default to isolate synth audio
   volChords = new Tone.Volume(-10).connect(mainFilter);
   volBass = new Tone.Volume(-12).connect(mainFilter);
   volMelody = new Tone.Volume(-8).connect(delay);
@@ -259,6 +260,7 @@ function initializeAudio() {
     oscillator: { type: "triangle" },
     envelope: { attack: 1.5, decay: 1.0, sustain: 0.7, release: 2.0 }
   }).connect(volChords);
+  synthPad.set({ maxPolyphony: 6 }); // Prevent CPU overload from voice stacking
 
   synthBass = new Tone.MonoSynth({
     oscillator: { type: "sine" },
@@ -271,6 +273,7 @@ function initializeAudio() {
     oscillator: { type: "sine" },
     envelope: { attack: 0.05, decay: 0.8, sustain: 0.2, release: 1.5 }
   }).connect(volMelody);
+  synthMelody.set({ maxPolyphony: 4 }); // Cap melody polyphony
 
   // Setup Mixer controls
   document.getElementById('vol-ambient').addEventListener('input', (e) => { volAmbient.volume.value = parseFloat(e.target.value); });
