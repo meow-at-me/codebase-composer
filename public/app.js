@@ -28,6 +28,7 @@ let geminiDna = null;
 // Synths and Effects
 let limiter, mainFilter, delay, reverb, bitcrusher, rainLFO;
 let synthPad, synthBass, synthMelody, synthArp, noiseSynth, rainNoise;
+let kickSynth, clapSynth, hatSynth;
 let volAmbient, volChords, volBass, volMelody, volDrums, volArp;
 let analyser;
 let arpLoop = null;
@@ -73,6 +74,14 @@ function logToConsole(text, type = 'system') {
   consoleOutput.appendChild(line);
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
 }
+
+// Global error logging for debugging client-side audio issues
+window.addEventListener('error', (e) => {
+  logToConsole(`[JS ERROR] ${e.message} at ${e.filename ? e.filename.split('/').pop() : 'inline'}:${e.lineno}`, 'system');
+});
+window.addEventListener('unhandledrejection', (e) => {
+  logToConsole(`[PROMISE ERROR] ${e.reason}`, 'system');
+});
 
 // Adjust canvas size
 function resizeCanvas() {
@@ -243,88 +252,110 @@ function getMockData() {
 // --- Sound Synthesizer Engine ---
 
 function initializeAudio() {
-  if (toneStarted) return;
-  
-  // Prevent CPU audio glitches by setting buffer latency hint to playback
-  Tone.context.latencyHint = "playback";
-  Tone.context.lookAhead = 0.15; // Increased schedule window for stutter-free playback
-  
-  limiter = new Tone.Limiter(-1).toDestination();
-  mainFilter = new Tone.Filter(850, "lowpass").connect(limiter);
-  
-  reverb = new Tone.Reverb({ roomSize: 0.8, wet: 0.35 }).connect(mainFilter);
-  delay = new Tone.FeedbackDelay("8n.", 0.25).connect(reverb);
-  delay.wet.value = 0.25;
+  try {
+    if (toneStarted) return;
+    
+    // Prevent CPU audio glitches by setting buffer latency hint to playback
+    Tone.context.latencyHint = "playback";
+    Tone.context.lookAhead = 0.15; // Increased schedule window for stutter-free playback
+    
+    limiter = new Tone.Limiter(-1).toDestination();
+    mainFilter = new Tone.Filter(850, "lowpass").connect(limiter);
+    
+    reverb = new Tone.Reverb({ roomSize: 0.8, wet: 0.35 }).connect(mainFilter);
+    delay = new Tone.FeedbackDelay("8n.", 0.25).connect(reverb);
+    delay.wet.value = 0.25;
 
-  analyser = new Tone.Analyser("fft", 256);
-  mainFilter.connect(analyser);
+    analyser = new Tone.Analyser("fft", 256);
+    mainFilter.connect(analyser);
 
-  volAmbient = new Tone.Volume(-60).connect(mainFilter); // Muted by default to isolate synth audio
-  volChords = new Tone.Volume(-10).connect(mainFilter);
-  volBass = new Tone.Volume(-12).connect(mainFilter);
-  bitcrusher = new Tone.Bitcrusher(8).connect(delay);
-  bitcrusher.wet.value = 0.0;
-  volMelody = new Tone.Volume(-8).connect(bitcrusher);
-  volDrums = new Tone.Volume(-8).connect(mainFilter);
+    volAmbient = new Tone.Volume(-60).connect(mainFilter); // Muted by default to isolate synth audio
+    volChords = new Tone.Volume(-10).connect(mainFilter);
+    volBass = new Tone.Volume(-12).connect(mainFilter);
+    bitcrusher = new Tone.Bitcrusher(8).connect(delay);
+    bitcrusher.wet.value = 0.0;
+    volMelody = new Tone.Volume(-8).connect(bitcrusher);
+    volDrums = new Tone.Volume(-8).connect(mainFilter);
 
-  rainNoise = new Tone.Noise("pink");
-  const rainFilter = new Tone.Filter(400, "lowpass").connect(volAmbient);
-  rainNoise.connect(rainFilter);
-  rainNoise.volume.value = -12;
+    rainNoise = new Tone.Noise("pink");
+    const rainFilter = new Tone.Filter(400, "lowpass").connect(volAmbient);
+    rainNoise.connect(rainFilter);
+    rainNoise.volume.value = -12;
 
-  // LFO to create a organic, breathing wind sweep effect in the background
-  rainLFO = new Tone.LFO(0.03, 200, 650).start();
-  rainLFO.connect(rainFilter.frequency);
+    // LFO to create a organic, breathing wind sweep effect in the background
+    rainLFO = new Tone.LFO(0.03, 200, 650).start();
+    rainLFO.connect(rainFilter.frequency);
 
-  // Bandpass filter to make white noise vinyl crackle sound warm and analog, avoiding harsh digital clicks
-  const crackleFilter = new Tone.Filter({
-    type: "bandpass",
-    frequency: 1000,
-    Q: 3
-  }).connect(volAmbient);
+    // Bandpass filter to make white noise vinyl crackle sound warm and analog, avoiding harsh digital clicks
+    const crackleFilter = new Tone.Filter({
+      type: "bandpass",
+      frequency: 1000,
+      Q: 3
+    }).connect(volAmbient);
 
-  noiseSynth = new Tone.NoiseSynth({
-    noise: { type: "white" },
-    envelope: { attack: 0.001, decay: 0.005, sustain: 0 }
-  }).connect(crackleFilter);
+    noiseSynth = new Tone.NoiseSynth({
+      noise: { type: "white" },
+      envelope: { attack: 0.001, decay: 0.005, sustain: 0 }
+    }).connect(crackleFilter);
 
-  synthPad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "triangle" },
-    envelope: { attack: 1.5, decay: 1.0, sustain: 0.7, release: 2.0 }
-  }).connect(volChords);
-  synthPad.set({ maxPolyphony: 6 }); // Prevent CPU overload from voice stacking
+    synthPad = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: "triangle" },
+      envelope: { attack: 1.5, decay: 1.0, sustain: 0.7, release: 2.0 }
+    }).connect(volChords);
+    synthPad.set({ maxPolyphony: 6 }); // Prevent CPU overload from voice stacking
 
-  synthBass = new Tone.MonoSynth({
-    oscillator: { type: "sine" },
-    filter: { Q: 1, type: "lowpass", frequency: 180 },
-    envelope: { attack: 0.1, decay: 0.5, sustain: 0.8, release: 0.5 },
-    filterEnvelope: { attack: 0.05, decay: 0.2, sustain: 0.5, baseFrequency: 100, octaves: 1 }
-  }).connect(volBass);
+    synthBass = new Tone.MonoSynth({
+      oscillator: { type: "sine" },
+      filter: { Q: 1, type: "lowpass", frequency: 180 },
+      envelope: { attack: 0.1, decay: 0.5, sustain: 0.8, release: 0.5 },
+      filterEnvelope: { attack: 0.05, decay: 0.2, sustain: 0.5, baseFrequency: 100, octaves: 1 }
+    }).connect(volBass);
 
-  synthMelody = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sine" },
-    envelope: { attack: 0.05, decay: 0.8, sustain: 0.2, release: 1.5 }
-  }).connect(volMelody);
-  synthMelody.set({ maxPolyphony: 4 }); // Cap melody polyphony
+    synthMelody = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: "sine" },
+      envelope: { attack: 0.05, decay: 0.8, sustain: 0.2, release: 1.5 }
+    }).connect(volMelody);
+    synthMelody.set({ maxPolyphony: 4 }); // Cap melody polyphony
 
-  // Setup Arpeggiator volume and synth
-  volArp = new Tone.Volume(-12).connect(delay);
-  synthArp = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "triangle" },
-    envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.4 }
-  }).connect(volArp);
-  synthArp.set({ maxPolyphony: 6 });
+    // Setup Arpeggiator volume and synth
+    volArp = new Tone.Volume(-12).connect(delay);
+    synthArp = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: "triangle" },
+      envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.4 }
+    }).connect(volArp);
+    synthArp.set({ maxPolyphony: 6 });
 
-  // Setup Mixer controls
-  document.getElementById('vol-ambient').addEventListener('input', (e) => { volAmbient.volume.value = parseFloat(e.target.value); });
-  document.getElementById('vol-chords').addEventListener('input', (e) => { volChords.volume.value = parseFloat(e.target.value); });
-  document.getElementById('vol-bass').addEventListener('input', (e) => { volBass.volume.value = parseFloat(e.target.value); });
-  document.getElementById('vol-melody').addEventListener('input', (e) => { volMelody.volume.value = parseFloat(e.target.value); });
-  document.getElementById('vol-drums').addEventListener('input', (e) => { volDrums.volume.value = parseFloat(e.target.value); });
-  document.getElementById('vol-arp').addEventListener('input', (e) => { volArp.volume.value = parseFloat(e.target.value); });
+    // Setup Drum synths in global scope to prevent memory leaks on restart
+    kickSynth = new Tone.MembraneSynth({
+      envelope: { attack: 0.005, decay: 0.15, sustain: 0 }
+    }).connect(volDrums);
+    kickSynth.volume.value = -3;
 
-  toneStarted = true;
-  logToConsole('Web Audio Engine & Synthesizers initialized.', 'system');
+    clapSynth = new Tone.NoiseSynth({
+      noise: { type: "pink" },
+      envelope: { attack: 0.001, decay: 0.08, sustain: 0 }
+    }).connect(volDrums);
+    clapSynth.volume.value = -12;
+
+    hatSynth = new Tone.MetalSynth({
+      envelope: { attack: 0.001, decay: 0.05, sustain: 0 }
+    }).connect(volDrums);
+    hatSynth.volume.value = -25;
+
+    // Setup Mixer controls
+    document.getElementById('vol-ambient').addEventListener('input', (e) => { volAmbient.volume.value = parseFloat(e.target.value); });
+    document.getElementById('vol-chords').addEventListener('input', (e) => { volChords.volume.value = parseFloat(e.target.value); });
+    document.getElementById('vol-bass').addEventListener('input', (e) => { volBass.volume.value = parseFloat(e.target.value); });
+    document.getElementById('vol-melody').addEventListener('input', (e) => { volMelody.volume.value = parseFloat(e.target.value); });
+    document.getElementById('vol-drums').addEventListener('input', (e) => { volDrums.volume.value = parseFloat(e.target.value); });
+    document.getElementById('vol-arp').addEventListener('input', (e) => { volArp.volume.value = parseFloat(e.target.value); });
+
+    toneStarted = true;
+    logToConsole('Web Audio Engine & Synthesizers initialized.', 'system');
+  } catch (err) {
+    console.error('Audio initialization failed:', err);
+    logToConsole(`[AUDIO ERROR] Init failed: ${err.message}`, 'system');
+  }
 }
 
 // Music scales mapping
@@ -624,46 +655,30 @@ function startSequencer() {
     }
   }, "8n").start(0);
 
-  // 3. Drums Trigger Loop
-  const kickSynth = new Tone.MembraneSynth({
-    envelope: { attack: 0.005, decay: 0.15, sustain: 0 }
-  }).connect(volDrums);
-  kickSynth.volume.value = -3;
-
-  const clapSynth = new Tone.NoiseSynth({
-    noise: { type: "pink" },
-    envelope: { attack: 0.001, decay: 0.08, sustain: 0 }
-  }).connect(volDrums);
-  clapSynth.volume.value = -12;
-
-  const hatSynth = new Tone.MetalSynth({
-    envelope: { attack: 0.001, decay: 0.05, sustain: 0 }
-  }).connect(volDrums);
-  hatSynth.volume.value = -25;
-
+  // 3. Drums Trigger Loop (References global synth variables)
   drumLoop = new Tone.Loop((time) => {
     const kickSteps = [0, 8, 10];
     const snareSteps = [4, 12];
     
     if (kickSteps.includes(step)) {
-      kickSynth.triggerAttackRelease("C1", "8n", time, 0.8);
+      if (kickSynth) kickSynth.triggerAttackRelease("C1", "8n", time, 0.8);
       Tone.Draw.schedule(() => {
         liveSynthSpan.innerText = 'Kick drum';
       }, time);
     }
     
     if (snareSteps.includes(step)) {
-      clapSynth.triggerAttackRelease("16n", time, 0.7);
+      if (clapSynth) clapSynth.triggerAttackRelease("16n", time, 0.7);
       Tone.Draw.schedule(() => {
         liveSynthSpan.innerText = 'Snare drum';
       }, time);
     }
 
-    const pythonFilesCount = (codebase.languages.python && codebase.languages.python.files) || 10;
-    const cppFilesCount = (codebase.languages.cpp && codebase.languages.cpp.files) || 10;
+    const pythonFilesCount = (codebase && codebase.languages && codebase.languages.python && codebase.languages.python.files) || 10;
+    const cppFilesCount = (codebase && codebase.languages && codebase.languages.cpp && codebase.languages.cpp.files) || 10;
     
     const shouldPlayHat = step % 2 === 0 || (step % 4 === 1 && pythonFilesCount > cppFilesCount);
-    if (shouldPlayHat) {
+    if (shouldPlayHat && hatSynth) {
       const vel = 0.3 + Math.random() * 0.4;
       hatSynth.triggerAttackRelease("16n", time, vel);
     }
@@ -675,7 +690,7 @@ function startSequencer() {
   melodyLoop = new Tone.Loop((time) => {
     if (notesScale.length === 0) return;
     
-    const mainLang = codebase.summary.mainLanguage.toLowerCase();
+    const mainLang = (codebase && codebase.summary && codebase.summary.mainLanguage) ? codebase.summary.mainLanguage.toLowerCase() : 'python';
     const prob = mainLang === 'python' || geminiDna ? 0.45 : 0.25;
 
     if (Math.random() < prob) {
@@ -731,42 +746,55 @@ function stopSequencer() {
 // --- Player Controls Event ---
 
 async function togglePlayback() {
-  initializeAudio();
+  try {
+    initializeAudio();
 
-  if (isPlaying) {
-    Tone.Transport.pause();
-    stopSequencer();
-    if (rainNoise) rainNoise.stop();
-    isPlaying = false;
-    
-    playBtn.innerHTML = '<span class="icon">▶</span> Play Codebase';
-    playBtn.classList.remove('btn-primary');
-    playBtn.classList.add('btn-primary');
-    
-    vinylDisc.classList.remove('playing');
-    tonearm.classList.remove('playing');
-    
-    liveSynthSpan.innerText = 'Idle';
-    liveChordSpan.innerText = 'None';
-    logToConsole('Playback paused.', 'system');
-  } else {
-    await Tone.start();
-    
-    setupProceduralAudioParameters();
-    startSequencer();
-    if (rainNoise) rainNoise.start();
-    
-    Tone.Transport.start();
-    isPlaying = true;
-    
-    playBtn.innerHTML = '<span class="icon">⏸</span> Pause Music';
-    playBtn.classList.remove('btn-primary');
-    playBtn.classList.add('btn-primary');
-    
-    vinylDisc.classList.add('playing');
-    tonearm.classList.add('playing');
-    
-    logToConsole('Playback started! Playing codebase soundtrack.', 'system');
+    if (isPlaying) {
+      Tone.Transport.pause();
+      stopSequencer();
+      if (rainNoise) rainNoise.stop();
+      isPlaying = false;
+      
+      playBtn.innerHTML = '<span class="icon">▶</span> Play Codebase';
+      playBtn.classList.remove('btn-primary');
+      playBtn.classList.add('btn-primary');
+      
+      vinylDisc.classList.remove('playing');
+      tonearm.classList.remove('playing');
+      
+      liveSynthSpan.innerText = 'Idle';
+      liveChordSpan.innerText = 'None';
+      logToConsole('Playback paused.', 'system');
+    } else {
+      await Tone.start();
+      
+      if (!codebase) {
+        logToConsole('Codebase data not yet scanned. Loading default simulation music...', 'system');
+        codebase = getMockData();
+        updateUI(codebase);
+      }
+      
+      logToConsole(`Audio Context State: ${Tone.context.state}`, 'system');
+      
+      setupProceduralAudioParameters();
+      startSequencer();
+      if (rainNoise) rainNoise.start();
+      
+      Tone.Transport.start();
+      isPlaying = true;
+      
+      playBtn.innerHTML = '<span class="icon">⏸</span> Pause Music';
+      playBtn.classList.remove('btn-primary');
+      playBtn.classList.add('btn-primary');
+      
+      vinylDisc.classList.add('playing');
+      tonearm.classList.add('playing');
+      
+      logToConsole('Playback started! Playing codebase soundtrack.', 'system');
+    }
+  } catch (err) {
+    console.error('Playback toggle failed:', err);
+    logToConsole(`[PLAYBACK ERROR] ${err.message}`, 'system');
   }
 }
 
