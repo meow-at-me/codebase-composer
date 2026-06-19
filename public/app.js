@@ -272,7 +272,7 @@ function initializeAudio() {
     volAmbient = new Tone.Volume(-60).connect(mainFilter); // Muted by default to isolate synth audio
     volChords = new Tone.Volume(-10).connect(mainFilter);
     volBass = new Tone.Volume(-12).connect(mainFilter);
-    bitcrusher = new Tone.Bitcrusher(8).connect(delay);
+    bitcrusher = new Tone.BitCrusher(8).connect(delay);
     bitcrusher.wet.value = 0.0;
     volMelody = new Tone.Volume(-8).connect(bitcrusher);
     volDrums = new Tone.Volume(-8).connect(mainFilter);
