@@ -17,16 +17,63 @@
   <div class="glass-bg"></div>
   <div class="noise-overlay"></div>
 
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="logo-area">
-        <div class="pulsing-dot"></div>
-        <h1>Codebase Lo-Fi Synth Station</h1>
+  <!-- Help Drawer -->
+  <div id="help-drawer" class="help-drawer">
+    <div class="drawer-header">
+      <h2>How to Use & Mappings</h2>
+      <button id="close-help-btn" class="close-btn">&times;</button>
+    </div>
+    <div class="drawer-content">
+      <div class="help-section">
+        <h3>🚀 Quick Start</h3>
+        <ol>
+          <li>Type your target absolute workspace path in the top input bar (e.g. <code>/home/user/ros2_ws</code>) and click <b>Scan & Sync</b>.</li>
+          <li>Click the main <b>Play Codebase</b> button to start the music.</li>
+          <li>Tune individual volume channels (crackle, chords, bass, melody, drums) in the <b>Sound Mixer</b> card.</li>
+        </ol>
       </div>
-      <div class="workspace-tag">
-        <span class="label">Workspace:</span>
-        <span id="workspace-name" class="val">Scanning...</span>
+      <div class="help-section">
+        <h3>✨ Gemini AI Mode</h3>
+        <ul>
+          <li>Enter your Gemini API Key in the settings panel and check the <b>AI Compose</b> toggle.</li>
+          <li>Gemini will read your codebase statistics and generate dynamic jazzy or moody chords, scales, and tempos based on the code's character.</li>
+        </ul>
+      </div>
+      <div class="help-section">
+        <h3>🎵 Mappings Summary</h3>
+        <ul>
+          <li><b>Lines of Code (LOC)</b> ➜ Tempo (BPM)</li>
+          <li><b>C++ Density</b> ➜ Moody D Minor scale</li>
+          <li><b>Python/JS Density</b> ➜ Warm F Major scale</li>
+          <li><b>Web (HTML/CSS) Density</b> ➜ High-frequency pad brightness</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header with target path input at the top -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-area">
+          <div class="pulsing-dot"></div>
+          <h1>Codebase Lo-Fi Synth Station</h1>
+        </div>
+      </div>
+      
+      <div class="header-center">
+        <div class="header-path-box">
+          <input type="text" id="scan-path-input" placeholder="Type absolute path (e.g. /home/user)">
+          <button id="scan-btn" class="btn btn-secondary btn-sm">Scan & Sync</button>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="help-btn" class="help-btn-circle" title="사용 방법">?</button>
+        <div class="workspace-tag">
+          <span class="label">WS:</span>
+          <span id="workspace-name" class="val">Scanning...</span>
+        </div>
       </div>
     </header>
 
@@ -98,23 +145,15 @@
       <!-- Center/Right Column: Codebase Stats Dashboard -->
       <section class="dashboard-column">
         
-        <!-- Settings & Scan Target (Plugin feel) -->
+        <!-- API Configuration Settings (Cleaned, Path moved to header) -->
         <div class="card settings-card">
-          <h2>Configuration & Settings</h2>
+          <h2>Gemini AI Composer Config</h2>
           
-          <div class="settings-grid">
-            <div class="input-group">
-              <label for="scan-path-input">Scan Target Path</label>
-              <div class="row-inputs">
-                <input type="text" id="scan-path-input" placeholder="e.g. /home/user" value="">
-                <button id="scan-btn" class="btn btn-secondary">Scan & Sync</button>
-              </div>
-            </div>
-            
+          <div class="settings-grid-single">
             <div class="input-group">
               <label for="gemini-key-input">Gemini API Key (Optional)</label>
               <div class="row-inputs">
-                <input type="password" id="gemini-key-input" placeholder="AI-composed music DNA">
+                <input type="password" id="gemini-key-input" placeholder="Enter key for AI-composed music DNA">
                 <label class="toggle-switch">
                   <input type="checkbox" id="gemini-mode-toggle">
                   <span class="slider"></span>

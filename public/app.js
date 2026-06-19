@@ -27,7 +27,7 @@ let geminiDna = null;
 
 // Synths and Effects
 let limiter, mainFilter, delay, reverb;
-let synthPad, synthBass, synthMelody, noiseSynth;
+let synthPad, synthBass, synthMelody, noiseSynth, rainNoise;
 let volAmbient, volChords, volBass, volMelody, volDrums;
 let analyser;
 
@@ -48,6 +48,10 @@ const ctx = canvas.getContext('2d');
 const scanPathInput = document.getElementById('scan-path-input');
 const geminiKeyInput = document.getElementById('gemini-key-input');
 const geminiModeToggle = document.getElementById('gemini-mode-toggle');
+
+const helpBtn = document.getElementById('help-btn');
+const helpDrawer = document.getElementById('help-drawer');
+const closeHelpBtn = document.getElementById('close-help-btn');
 
 // --- Helper Functions ---
 
@@ -228,7 +232,7 @@ function initializeAudio() {
   volMelody = new Tone.Volume(-8).connect(delay);
   volDrums = new Tone.Volume(-8).connect(mainFilter);
 
-  const rainNoise = new Tone.Noise("pink").start();
+  rainNoise = new Tone.Noise("pink");
   const rainFilter = new Tone.Filter(400, "lowpass").connect(volAmbient);
   rainNoise.connect(rainFilter);
   rainNoise.volume.value = -12;
@@ -500,6 +504,7 @@ async function togglePlayback() {
   if (isPlaying) {
     Tone.Transport.pause();
     stopSequencer();
+    if (rainNoise) rainNoise.stop();
     isPlaying = false;
     
     playBtn.innerHTML = '<span class="icon">▶</span> Play Codebase';
@@ -517,6 +522,7 @@ async function togglePlayback() {
     
     setupProceduralAudioParameters();
     startSequencer();
+    if (rainNoise) rainNoise.start();
     
     Tone.Transport.start();
     isPlaying = true;
@@ -566,3 +572,12 @@ window.addEventListener('load', () => {
   loadSavedSettings();
   fetchCodebaseData();
 });
+
+// Help Drawer Toggle Event Listeners
+helpBtn.addEventListener('click', () => {
+  helpDrawer.classList.add('open');
+});
+closeHelpBtn.addEventListener('click', () => {
+  helpDrawer.classList.remove('open');
+});
+

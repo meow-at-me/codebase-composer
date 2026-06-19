@@ -604,15 +604,10 @@ body {
 .settings-card {
   padding: 1.25rem 1.5rem;
 }
-.settings-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-@media (max-width: 768px) {
-  .settings-grid {
-    grid-template-columns: 1fr;
-  }
+.settings-grid-single {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 .input-group {
   display: flex;
@@ -702,6 +697,159 @@ body {
   font-weight: 600;
 }
 
+/* Header Input & Path Box styles */
+.header-left, .header-center, .header-right {
+  display: flex;
+  align-items: center;
+}
+.header-center {
+  flex: 1;
+  justify-content: center;
+  max-width: 480px;
+  margin: 0 2rem;
+}
+.header-path-box {
+  display: flex;
+  width: 100%;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+  transition: border-color 0.2s;
+}
+.header-path-box:focus-within {
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+}
+.header-path-box input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+/* Help Button Circle */
+.help-btn-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-dim);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  transition: all 0.2s;
+  outline: none;
+}
+.help-btn-circle:hover {
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+  transform: scale(1.05);
+}
+
+/* Help Drawer Panel */
+.help-drawer {
+  position: fixed;
+  top: 0;
+  right: -380px;
+  width: 360px;
+  height: 100vh;
+  background: rgba(10, 8, 20, 0.96);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-left: 1px solid var(--border-glow);
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  transition: right 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.help-drawer.open {
+  right: 0;
+}
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 0.8rem;
+}
+.drawer-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent-secondary);
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-dim);
+  font-size: 2.2rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+.close-btn:hover {
+  color: var(--accent-tertiary);
+}
+.drawer-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-right: 0.5rem;
+}
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.help-section h3 {
+  font-size: 0.85rem;
+  color: var(--accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+}
+.help-section ol, .help-section ul {
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+  line-height: 1.6;
+}
+.help-section li {
+  margin-bottom: 0.5rem;
+}
+.help-section code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text);
+}
+
 /* Footer styling */
 .app-footer {
   text-align: center;
@@ -710,4 +858,5 @@ body {
   padding: 1.5rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 
