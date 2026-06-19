@@ -8,15 +8,36 @@ It features two synthesis modes:
 
 ---
 
-## 🎨 Sound Mapping Schema
+## 🎨 Sound Mapping Schema & Procedural Engine
+
+The synthesizer converts your code statistics into music DNA through a complex mapping:
 
 | Codebase Stat | Musical Mapping | Sound Characteristic |
 | :--- | :--- | :--- |
-| **Lines of Code (LOC)** | **BPM (Tempo)** | Larger projects speed up (65 - 80 BPM) to sound structured and progressive. |
-| **Dominant Language (C++)** | **D Minor Chord Scale** | Industrial, technical, deep chord layers (Dm9, Bbmaj9, Am9, C9). |
-| **Dominant Language (Python/JS)** | **F Major Chord Scale** | Warm, jazzy, relaxing Rhodes chords (Fmaj9, G9, Em9, Am9). |
-| **Frontend Density (JS/HTML)** | **Filter Cut-off frequency** | Brightens or dims the low-pass filter, making front-end code sound airy. |
-| **File modification logs** | **Rhodes Melodies** | Recently touched files trigger light, chimey notes from the pentatonic scale. |
+| **Lines of Code (LOC)** | **BPM (Tempo)** | Larger projects speed up (65 - 80 BPM). Tempo shifts are smoothly ramped (DJ-like transition) to prevent context clicks. |
+| **Dominant Language (C++/Shell)** | **Minor Chord Mode** | Technical, industrial, deep chord layers (8 different progression templates). |
+| **Dominant Language (Python/JS/Web)** | **Major Chord Mode** | Jazzy, warm, relaxing Rhodes key layers (8 different progression templates). |
+| **Frontend Density (JS/HTML)** | **Filter Cut-off frequency** | Brightens or dims the low-pass filter, making front-end-heavy code sound airy. |
+| **File modification logs** | **Rhodes Melodies** | Recently touched files trigger light, chimey notes from the transposed pentatonic scale. |
+| **Folder Path String Hash** | **Root Key & Progressions** | Transposes the entire music scale (notes, chords, bass roots, chord names) across all 12 keys (C through B) and selects one of 8 templates, creating **96 unique procedural combinations** so different codebases sound completely distinct. |
+
+---
+
+## 📁 VS Code-Style Directory Explorer & WSL Support
+
+* **Native Windows Path Translation**: You can type or paste Windows host paths (e.g. `C:\Users\user\OneDrive\바탕 화면\others\advanced-theme-park`) directly. The server automatically translates them to WSL mount formats (`/mnt/c/...`) to scan files and folder contents on Windows from the WSL environment, while presenting them as clean native Windows paths in the UI.
+* **Interactive Directory Explorer**: Clicking the `📁` icon opens a dropdown directory browser:
+  - **Navigate**: Click on any folder row `📁 folder_name` to enter it, or click `📁 ..` to go up a level.
+  - **Quick Select**: Hover over any folder item and click the `Select` button that appears on the right to immediately select, close, and scan that directory.
+  - **Header Select**: Click the `Select` button in the explorer header to choose the folder you have currently navigated into.
+  - **Resilient Errors**: If a path fails to load (e.g. permission issues or a typo like `바탅`), the browser shows troubleshooting tips (typo checks) and preserves the typed path so clicking "Select" doesn't reset your input.
+
+---
+
+## 🔄 Rich Loading States
+* **Scan Button**: Displays a spinning loader icon next to `Scanning...` or `Composing...` when updating codebase statistics.
+* **Explorer List**: Displays a medium loading circle with a pulsing `Loading folders...` label when fetching subdirectories.
+* **Metrics Card Overlay**: Blurs the dashboard card with a large spinning loader and active stage labels (e.g., `Scanning codebase files...` or `AI Composing music DNA...`) to provide clear visual feedback during loading.
 
 ---
 
