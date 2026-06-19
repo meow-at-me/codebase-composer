@@ -23,9 +23,9 @@ The synthesizer converts your code statistics into music DNA through a complex m
 
 ---
 
-## 📁 VS Code-Style Directory Explorer & WSL Support
+## 📁 VS Code-Style Directory Explorer & Cross-Platform Paths
 
-* **Native Windows Path Translation**: You can type or paste Windows host paths (e.g. `C:\Users\user\OneDrive\바탕 화면\others\advanced-theme-park`) directly. The server automatically translates them to WSL mount formats (`/mnt/c/...`) to scan files and folder contents on Windows from the WSL environment, while presenting them as clean native Windows paths in the UI.
+* **Platform-Aware Path Handling**: You can type or paste Windows host paths (e.g. `C:\Users\user\OneDrive\바탕 화면\others\advanced-theme-park`) directly in both environments. The server detects the OS at runtime: on **native Windows** it uses the drive path as-is, and inside **WSL/Linux** it automatically translates it to a mount format (`/mnt/c/...`) to scan files on the Windows host. Either way, paths are presented as clean native paths in the UI.
 * **Interactive Directory Explorer**: Clicking the `📁` icon opens a dropdown directory browser:
   - **Navigate**: Click on any folder row `📁 folder_name` to enter it, or click `📁 ..` to go up a level.
   - **Quick Select**: Hover over any folder item and click the `Select` button that appears on the right to immediately select, close, and scan that directory.
@@ -50,7 +50,7 @@ cd codebase-lofi-generator
 ```
 
 ### 2. Install Dependencies
-Make sure you have Node.js (v18+) installed.
+Make sure you have Node.js (v18+) installed. The same commands work on **Windows (PowerShell/CMD)**, **WSL**, **macOS**, and **Linux** — the server is OS-agnostic.
 ```bash
 npm install
 ```
@@ -61,9 +61,23 @@ npm start
 ```
 The server will start at **`http://localhost:3000`**.
 
+> **Windows vs. WSL**: Run `npm start` from whichever environment owns the codebase you want to scan.
+> - **Native Windows** (PowerShell/CMD): type host paths like `C:\Users\you\project` directly.
+> - **WSL**: the same `C:\...` paths are auto-translated to `/mnt/c/...`, so you can scan Windows files from inside WSL.
+
 ### 4. (Optional) Run with Gemini AI Composition Mode
 You can feed a Gemini API Key to enable the generative composition.
 * **Option A**: Run the server with the environment variable set:
+
+  **Windows (PowerShell):**
+  ```powershell
+  $env:GEMINI_API_KEY="your-api-key-here"; npm start
+  ```
+  **Windows (CMD):**
+  ```cmd
+  set GEMINI_API_KEY=your-api-key-here && npm start
+  ```
+  **WSL / macOS / Linux (bash):**
   ```bash
   export GEMINI_API_KEY="your-api-key-here"
   npm start

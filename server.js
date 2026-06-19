@@ -4,6 +4,10 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// When running on native Windows we keep drive paths (C:\...) as-is.
+// Only inside WSL/Linux do we translate them to /mnt/<drive>/ mount paths.
+const IS_WINDOWS = process.platform === 'win32';
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -124,14 +128,15 @@ function scanWorkspace(dirPath, rootDir = dirPath) {
 
 // Scans the workspace directory
 app.get('/api/codebase', (req, res) => {
-  const defaultDir = path.dirname(__dirname); // /home/user
+  const defaultDir = path.dirname(__dirname); // parent of the project folder
   let targetDir = defaultDir;
   
   if (req.query.path) {
     let p = req.query.path.trim();
 
-    // Convert Windows paths (e.g. C:\Users\... or C:/Users/...) to WSL mount paths (/mnt/c/Users/...)
-    if (/^[a-zA-Z]:\\/.test(p) || /^[a-zA-Z]:\//.test(p)) {
+    // Convert Windows paths (e.g. C:\Users\... or C:/Users/...) to WSL mount paths (/mnt/c/Users/...).
+    // Skipped on native Windows, where drive paths are already valid.
+    if (!IS_WINDOWS && (/^[a-zA-Z]:\\/.test(p) || /^[a-zA-Z]:\//.test(p))) {
       const driveLetter = p[0].toLowerCase();
       const relativePath = p.slice(3).replace(/\\/g, '/');
       p = `/mnt/${driveLetter}/${relativePath}`;
@@ -141,7 +146,7 @@ app.get('/api/codebase', (req, res) => {
     if (p.startsWith('~')) {
       p = p.replace('~', defaultDir);
     }
-    // Resolve relative path against user workspace root (/home/user)
+    // Resolve relative path against the workspace root (parent of the project folder)
     if (!path.isAbsolute(p)) {
       targetDir = path.resolve(defaultDir, p);
     } else {
@@ -237,7 +242,7 @@ Do not wrap it in markdown. Just return the JSON object.`;
 
 // Directory Browsing Endpoint for UI Folder Explorer
 app.get('/api/browse', (req, res) => {
-  const defaultDir = path.dirname(__dirname); // /home/user
+  const defaultDir = path.dirname(__dirname); // parent of the project folder
   let targetDir = defaultDir;
   
   if (req.query.path) {
@@ -245,7 +250,8 @@ app.get('/api/browse', (req, res) => {
     if (p.startsWith('~')) {
       p = p.replace('~', defaultDir);
     }
-    if (/^[a-zA-Z]:\\/.test(p) || /^[a-zA-Z]:\//.test(p)) {
+    // Translate Windows drive paths to WSL mounts only when not on native Windows.
+    if (!IS_WINDOWS && (/^[a-zA-Z]:\\/.test(p) || /^[a-zA-Z]:\//.test(p))) {
       const driveLetter = p[0].toLowerCase();
       const relativePath = p.slice(3).replace(/\\/g, '/');
       p = `/mnt/${driveLetter}/${relativePath}`;
