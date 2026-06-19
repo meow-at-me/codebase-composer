@@ -61,6 +61,7 @@ const explorerDropdown = document.getElementById('explorer-dropdown');
 const explorerCurrentPath = document.getElementById('explorer-current-path');
 const explorerSelectBtn = document.getElementById('explorer-select-btn');
 const explorerList = document.getElementById('explorer-list');
+const dashboardLoadingOverlay = document.getElementById('dashboard-loading-overlay');
 
 // --- Helper Functions ---
 
@@ -91,6 +92,11 @@ async function fetchCodebaseData() {
   
   logToConsole(`Requesting scan for target path: ${customPath || '[Default Workspaces]'}`, 'system');
   
+  // Show spinner, disable scan button
+  dashboardLoadingOverlay.classList.add('active');
+  scanBtn.disabled = true;
+  scanBtn.innerText = 'Scanning...';
+  
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -120,10 +126,15 @@ async function fetchCodebaseData() {
     }
   } catch (error) {
     console.error('Error fetching codebase data:', error);
-    logToConsole('Scan failed. Using fallback simulation data.', 'system');
+    logToConsole(`Scan failed: ${error.message}. Using fallback simulation data.`, 'system');
     codebase = getMockData();
     updateUI(codebase);
     setupProceduralAudioParameters();
+  } finally {
+    // Hide spinner, restore scan button
+    dashboardLoadingOverlay.classList.remove('active');
+    scanBtn.disabled = false;
+    scanBtn.innerText = 'Scan & Sync';
   }
 }
 

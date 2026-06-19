@@ -940,6 +940,45 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
+/* Loading Spinner Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 8, 20, 0.75);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.loading-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.loading-spinner-large {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  border-top-color: var(--accent-secondary);
+  border-bottom-color: var(--accent-primary);
+  animation: spin-clockwise 1s linear infinite;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+@keyframes spin-clockwise {
+  to { transform: rotate(360deg); }
+}
+
 /* Footer styling */
 .app-footer {
   text-align: center;
