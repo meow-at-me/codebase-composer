@@ -149,6 +149,7 @@ app.get('/api/codebase', (req, res) => {
     }
   }
 
+  console.log(`[API /api/codebase] Requested path: "${req.query.path}" | Resolved targetDir: "${targetDir}"`);
   // Fallback to defaultDir if the resolved path does not exist
   if (!fs.existsSync(targetDir)) {
     return res.status(404).json({ error: `Directory not found: ${targetDir}` });
@@ -256,6 +257,7 @@ app.get('/api/browse', (req, res) => {
     }
   }
 
+  console.log(`[API /api/browse] Requested path: "${req.query.path}" | Resolved targetDir: "${targetDir}"`);
   try {
     if (!fs.existsSync(targetDir)) {
       return res.status(404).json({ error: 'Directory not found' });

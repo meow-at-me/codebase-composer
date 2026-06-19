@@ -1025,10 +1025,12 @@ async function loadDirectories(dirPath) {
     }
   } catch (err) {
     console.error('Error loading directories:', err);
-    explorerCurrentPath.innerText = 'Failed to load directory';
+    explorerPath = dirPath;
+    explorerCurrentPath.innerText = dirPath;
     explorerList.innerHTML = `
-      <div class="explorer-loading" style="color: var(--accent-primary);">
-        ⚠️ Failed to load folders
+      <div class="explorer-loading" style="color: var(--accent-primary); gap: 8px;">
+        <span>⚠️ Failed to load folders</span>
+        <span style="font-size: 0.7rem; color: var(--color-text-dim); text-align: center; line-height: 1.4;">Please check if the path exists on disk and is spelled correctly.</span>
       </div>
     `;
   }
