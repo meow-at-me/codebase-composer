@@ -921,8 +921,8 @@ body {
 }
 .explorer-item {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
   padding: 0.45rem 0.9rem;
   font-size: 0.8rem;
   color: var(--color-text-dim);
@@ -933,6 +933,22 @@ body {
 .explorer-item:hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--color-text);
+}
+.explorer-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-grow: 1;
+}
+.explorer-select-shortcut {
+  opacity: 0.4;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+  line-height: 1;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+.explorer-item:hover .explorer-select-shortcut {
+  opacity: 1;
 }
 .explorer-item.parent-dir {
   color: var(--accent-primary);

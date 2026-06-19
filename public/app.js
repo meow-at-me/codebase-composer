@@ -119,7 +119,7 @@ async function fetchCodebaseData() {
     
     // Auto-populate target input with resolved path
     if (codebase.workspacePath && !customPath) {
-      scanPathInput.value = codebase.workspacePath;
+      scanPathInput.value = wslToWindowsPath(codebase.workspacePath);
     }
     
     updateUI(codebase);
@@ -356,6 +356,18 @@ function initializeAudio() {
     console.error('Audio initialization failed:', err);
     logToConsole(`[AUDIO ERROR] Init failed: ${err.message}`, 'system');
   }
+}
+
+// WSL to Windows path translator for native Windows presentation
+function wslToWindowsPath(p) {
+  if (!p) return p;
+  const match = p.match(/^\/mnt\/([a-zA-Z])\/(.*)/);
+  if (match) {
+    const drive = match[1].toUpperCase();
+    const rel = match[2].replace(/\//g, '\\');
+    return `${drive}:\\${rel}`;
+  }
+  return p;
 }
 
 // Global Note Transposition Helpers
@@ -989,7 +1001,7 @@ async function loadDirectories(dirPath) {
     const data = await res.json();
     
     explorerPath = data.currentPath;
-    explorerCurrentPath.innerText = data.currentPath;
+    explorerCurrentPath.innerText = wslToWindowsPath(data.currentPath);
     explorerList.innerHTML = '';
     
     // Parent Directory (📁 ..)
@@ -1015,18 +1027,38 @@ async function loadDirectories(dirPath) {
       data.subdirs.forEach(dir => {
         const item = document.createElement('div');
         item.className = 'explorer-item';
-        item.innerHTML = `📁 ${dir}`;
-        item.addEventListener('click', () => {
+        
+        // Left area for clicking/navigating deeper
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'explorer-item-left';
+        leftDiv.innerHTML = `📁 ${dir}`;
+        leftDiv.addEventListener('click', (e) => {
+          e.stopPropagation();
           const next = explorerPath === '/' ? `/${dir}` : `${explorerPath}/${dir}`;
           loadDirectories(next);
         });
+        item.appendChild(leftDiv);
+        
+        // Right area for quick select shortcut
+        const selectBtn = document.createElement('button');
+        selectBtn.className = 'btn btn-primary btn-xs explorer-select-shortcut';
+        selectBtn.innerText = 'Select';
+        selectBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetPath = explorerPath === '/' ? `/${dir}` : `${explorerPath}/${dir}`;
+          scanPathInput.value = wslToWindowsPath(targetPath);
+          explorerDropdown.classList.remove('open');
+          scanBtn.click();
+        });
+        item.appendChild(selectBtn);
+        
         explorerList.appendChild(item);
       });
     }
   } catch (err) {
     console.error('Error loading directories:', err);
     explorerPath = dirPath;
-    explorerCurrentPath.innerText = dirPath;
+    explorerCurrentPath.innerText = wslToWindowsPath(dirPath);
     explorerList.innerHTML = `
       <div class="explorer-loading" style="color: var(--accent-primary); gap: 8px;">
         <span>⚠️ Failed to load folders</span>
@@ -1048,7 +1080,7 @@ browseBtn.addEventListener('click', (e) => {
 
 // Select folder button click
 explorerSelectBtn.addEventListener('click', () => {
-  scanPathInput.value = explorerPath;
+  scanPathInput.value = wslToWindowsPath(explorerPath);
   explorerDropdown.classList.remove('open');
   scanBtn.click(); // Trigger scan sync
 });
