@@ -26,10 +26,11 @@ let activeChordName = 'None';
 let geminiDna = null;
 
 // Synths and Effects
-let limiter, mainFilter, delay, reverb, bitcrusher;
-let synthPad, synthBass, synthMelody, noiseSynth, rainNoise;
-let volAmbient, volChords, volBass, volMelody, volDrums;
+let limiter, mainFilter, delay, reverb, bitcrusher, rainLFO;
+let synthPad, synthBass, synthMelody, synthArp, noiseSynth, rainNoise;
+let volAmbient, volChords, volBass, volMelody, volDrums, volArp;
 let analyser;
+let arpLoop = null;
 
 // DOM Elements
 const playBtn = document.getElementById('play-btn');
@@ -256,6 +257,10 @@ function initializeAudio() {
   rainNoise.connect(rainFilter);
   rainNoise.volume.value = -12;
 
+  // LFO to create a organic, breathing wind sweep effect in the background
+  rainLFO = new Tone.LFO(0.03, 200, 650).start();
+  rainLFO.connect(rainFilter.frequency);
+
   // Bandpass filter to make white noise vinyl crackle sound warm and analog, avoiding harsh digital clicks
   const crackleFilter = new Tone.Filter({
     type: "bandpass",
@@ -287,12 +292,21 @@ function initializeAudio() {
   }).connect(volMelody);
   synthMelody.set({ maxPolyphony: 4 }); // Cap melody polyphony
 
+  // Setup Arpeggiator volume and synth
+  volArp = new Tone.Volume(-12).connect(delay);
+  synthArp = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: "triangle" },
+    envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.4 }
+  }).connect(volArp);
+  synthArp.set({ maxPolyphony: 6 });
+
   // Setup Mixer controls
   document.getElementById('vol-ambient').addEventListener('input', (e) => { volAmbient.volume.value = parseFloat(e.target.value); });
   document.getElementById('vol-chords').addEventListener('input', (e) => { volChords.volume.value = parseFloat(e.target.value); });
   document.getElementById('vol-bass').addEventListener('input', (e) => { volBass.volume.value = parseFloat(e.target.value); });
   document.getElementById('vol-melody').addEventListener('input', (e) => { volMelody.volume.value = parseFloat(e.target.value); });
   document.getElementById('vol-drums').addEventListener('input', (e) => { volDrums.volume.value = parseFloat(e.target.value); });
+  document.getElementById('vol-arp').addEventListener('input', (e) => { volArp.volume.value = parseFloat(e.target.value); });
 
   toneStarted = true;
   logToConsole('Web Audio Engine & Synthesizers initialized.', 'system');
@@ -654,6 +668,26 @@ function startSequencer() {
       }, time);
     }
   }, "8n").start(0);
+
+  // 5. Arpeggiator loop (Sparkles)
+  let arpIndex = 0;
+  arpLoop = new Tone.Loop((time) => {
+    if (chordProgression.length > 0 && Math.random() < 0.4) {
+      // Safely access current chord notes using chordIndex shared closure variable
+      const activeChord = chordProgression[chordIndex % chordProgression.length];
+      if (activeChord && activeChord.length > 0) {
+        const baseNote = activeChord[arpIndex % activeChord.length];
+        
+        // Pitch up by 1 or 2 octaves for sparkle effect
+        const noteName = baseNote.slice(0, -1);
+        const baseOctave = parseInt(baseNote.slice(-1));
+        const arpNote = `${noteName}${baseOctave + 1}`;
+        
+        synthArp.triggerAttackRelease(arpNote, "16n", time, 0.25);
+        arpIndex++;
+      }
+    }
+  }, "16n").start(0);
 }
 
 function stopSequencer() {
@@ -661,6 +695,7 @@ function stopSequencer() {
   if (drumLoop) drumLoop.dispose();
   if (melodyLoop) melodyLoop.dispose();
   if (vinylCrackLoop) vinylCrackLoop.dispose();
+  if (arpLoop) arpLoop.dispose();
 }
 
 // --- Player Controls Event ---
