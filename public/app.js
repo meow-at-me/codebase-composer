@@ -49,6 +49,7 @@ const ctx = canvas.getContext('2d');
 
 const scanPathInput = document.getElementById('scan-path-input');
 const geminiKeyInput = document.getElementById('gemini-key-input');
+const geminiSubmitBtn = document.getElementById('gemini-submit-btn');
 const geminiModeToggle = document.getElementById('gemini-mode-toggle');
 const geminiTempSlider = document.getElementById('gemini-temp-slider');
 const tempValSpan = document.getElementById('temp-val');
@@ -961,10 +962,33 @@ scanBtn.addEventListener('click', async () => {
   logToConsole('Sync scan applied in real-time!', 'system');
 });
 
-// Trigger scan on Enter key press
+// Submit API key button click
+geminiSubmitBtn.addEventListener('click', async () => {
+  const apiKey = geminiKeyInput.value.trim();
+  if (!apiKey) {
+    logToConsole('Please enter a valid Gemini API Key first.', 'system');
+    return;
+  }
+  // Automatically enable toggle and save
+  geminiModeToggle.checked = true;
+  localStorage.setItem('lofi_gemini_mode_active', 'true');
+  localStorage.setItem('lofi_gemini_api_key', apiKey);
+  
+  logToConsole('API Key submitted. Enabling AI Compose and syncing music DNA...', 'system');
+  await fetchCodebaseData();
+});
+
+// Trigger scan on Enter key press in path input
 scanPathInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     scanBtn.click();
+  }
+});
+
+// Trigger submit on Enter key press in API key input
+geminiKeyInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    geminiSubmitBtn.click();
   }
 });
 
@@ -1009,7 +1033,8 @@ async function loadDirectories(dirPath) {
       const upItem = document.createElement('div');
       upItem.className = 'explorer-item parent-dir';
       upItem.innerHTML = '📁 .. (Up a level)';
-      upItem.addEventListener('click', () => {
+      upItem.addEventListener('click', (e) => {
+        e.stopPropagation();
         loadDirectories(data.parentPath);
       });
       explorerList.appendChild(upItem);

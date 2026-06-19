@@ -82,7 +82,12 @@ You can feed a Gemini API Key to enable the generative composition.
   export GEMINI_API_KEY="your-api-key-here"
   npm start
   ```
-* **Option B**: Paste the API Key directly into the **Settings panel** on the web page and toggle the **AI Compose** switch.
+* **Option B**: Paste the API Key directly into the **Settings panel** on the web page and click the **Submit** button (or press `Enter`).
+  
+  > [!IMPORTANT]
+  > **🔒 Security & Privacy Note:**
+  > * Your API key is stored **strictly locally** in your browser's `localStorage` and is used to communicate directly with Google's official Gemini API servers. There is no intermediate server or third-party tracking, so your key is completely safe from leaks.
+  > * If you are still concerned about sharing your API key, you can simply keep **AI Compose** turned off (or leave the key empty) and play the music in **Procedural Mode**. It runs 100% offline using client-side algorithms, requiring no internet or API keys.
 
 ---
 
