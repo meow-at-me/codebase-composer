@@ -188,6 +188,15 @@ interface MusicDNA {
   chordNames: string[]; // 4 chord name strings, e.g. ["Dm9", "Bbmaj9", "Am9", "C9"]
   bassRootNotes: string[]; // 4 bass root notes, e.g. ["D1", "Bb1", "A1", "C2"]
   melodyScale: string[]; // 8-10 notes of the pentatonic/natural scale for melody generation, e.g. ["D4", "E4", "F4", "A4", "C5", "D5"]
+  soundDesign: {
+    padOscillator: 'triangle' | 'sine' | 'sawtooth' | 'square';
+    padAttack: number; // attack envelope in seconds (0.1 to 3.0)
+    padRelease: number; // release envelope in seconds (1.0 to 4.0)
+    melodyOscillator: 'sine' | 'triangle' | 'sawtooth';
+    melodyAttack: number; // attack envelope in seconds (0.01 to 0.2)
+    bitcrusherWet: number; // amount of digital crunch (0.0 to 0.4)
+    reverbWet: number; // amount of spacious reverb (0.1 to 0.6)
+  };
   explanation: string; // Brief poetic description explaining how this music maps to their codebase's character.
 }
 Do not wrap it in markdown. Just return the JSON object.`;

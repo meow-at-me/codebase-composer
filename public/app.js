@@ -26,7 +26,7 @@ let activeChordName = 'None';
 let geminiDna = null;
 
 // Synths and Effects
-let limiter, mainFilter, delay, reverb;
+let limiter, mainFilter, delay, reverb, bitcrusher;
 let synthPad, synthBass, synthMelody, noiseSynth, rainNoise;
 let volAmbient, volChords, volBass, volMelody, volDrums;
 let analyser;
@@ -246,7 +246,9 @@ function initializeAudio() {
   volAmbient = new Tone.Volume(-60).connect(mainFilter); // Muted by default to isolate synth audio
   volChords = new Tone.Volume(-10).connect(mainFilter);
   volBass = new Tone.Volume(-12).connect(mainFilter);
-  volMelody = new Tone.Volume(-8).connect(delay);
+  bitcrusher = new Tone.Bitcrusher(8).connect(delay);
+  bitcrusher.wet.value = 0.0;
+  volMelody = new Tone.Volume(-8).connect(bitcrusher);
   volDrums = new Tone.Volume(-8).connect(mainFilter);
 
   rainNoise = new Tone.Noise("pink");
@@ -318,6 +320,38 @@ function setupProceduralAudioParameters() {
     Tone.Transport.bpm.value = currentBpm;
     liveBpmSpan.innerText = `${currentBpm} BPM`;
     logToConsole(`[GEMINI DNA LOADED] Chords: ${chordNamesList.join(', ')} | Tempo: ${currentBpm} BPM`, 'synth');
+
+    // Apply Gemini Custom Synth Sound Design
+    if (geminiDna.soundDesign && toneStarted) {
+      const sd = geminiDna.soundDesign;
+      
+      // Pad chords settings
+      if (sd.padOscillator) {
+        synthPad.set({ oscillator: { type: sd.padOscillator } });
+      }
+      synthPad.set({
+        envelope: {
+          attack: sd.padAttack || 1.5,
+          release: sd.padRelease || 2.0
+        }
+      });
+      
+      // Melody settings
+      if (sd.melodyOscillator) {
+        synthMelody.set({ oscillator: { type: sd.melodyOscillator } });
+      }
+      synthMelody.set({
+        envelope: {
+          attack: sd.melodyAttack || 0.05
+        }
+      });
+      
+      // FX settings
+      if (bitcrusher) bitcrusher.wet.value = sd.bitcrusherWet ?? 0.0;
+      if (reverb) reverb.wet.value = sd.reverbWet ?? 0.35;
+      
+      logToConsole(`[AI INSTRUMENTS] Pad Osc: ${sd.padOscillator} (atk: ${sd.padAttack}s) | Melody Osc: ${sd.melodyOscillator} | Crusher: ${(sd.bitcrusherWet*100).toFixed(0)}%`, 'synth');
+    }
     return;
   }
 
@@ -336,6 +370,19 @@ function setupProceduralAudioParameters() {
     hash = pathStr.charCodeAt(i) + ((hash << 5) - hash);
   }
   const progIndex = Math.abs(hash) % 3; // 3 progression variations
+
+  // Sound Design defaults
+  let padOscillator = 'triangle';
+  let padAttack = 1.5;
+  let padRelease = 2.0;
+  let melodyOscillator = 'sine';
+  let melodyAttack = 0.05;
+  let bitcrusherWet = 0.0;
+  let reverbWet = 0.35;
+
+  const jsInfo = codebase.languages.javascript || { files: 0 };
+  const htmlInfo = codebase.languages.html || { files: 0 };
+  const webDensity = (jsInfo.files + htmlInfo.files) / codebase.summary.totalFiles;
 
   if (mainLang === 'cpp' || mainLang === 'shell' || mainLang === 'other') {
     activeMode = 'minor';
@@ -366,7 +413,18 @@ function setupProceduralAudioParameters() {
     chordProgression = chosen.chords;
     chordNamesList = chosen.names;
     bassRootNotes = chosen.roots;
+
+    // C++ / Hardware Sound Design: Gritty analogue feel
+    padOscillator = 'sawtooth'; // Rich, buzzy sawtooth (heavy filter will make it warm)
+    padAttack = 2.2;
+    padRelease = 3.0;
+    melodyOscillator = 'triangle';
+    melodyAttack = 0.08;
+    bitcrusherWet = 0.2; // Subtle digital crunch
+    reverbWet = 0.45;
+
     logToConsole(`Dominant tone: C++/Shell. Scale: D Minor Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
+    logToConsole('[SYNTH PATCH] Loaded heavy filtered Sawtooth pad with 12-bit sampler crunch.', 'synth');
   } else {
     activeMode = 'major';
     notesScale = ['F4', 'G4', 'A4', 'C5', 'D5', 'F5', 'G5', 'A5', 'C6', 'D6'];
@@ -396,13 +454,52 @@ function setupProceduralAudioParameters() {
     chordProgression = chosen.chords;
     chordNamesList = chosen.names;
     bassRootNotes = chosen.roots;
-    logToConsole(`Dominant tone: Python/Web technologies. Scale: F Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
+
+    // Web technologies vs Python Sound Design
+    if (webDensity > 0.4) {
+      padOscillator = 'square'; // Hollow, mellow square wave retro pad
+      padAttack = 0.8;
+      padRelease = 1.8;
+      melodyOscillator = 'sine';
+      melodyAttack = 0.03;
+      bitcrusherWet = 0.0;
+      reverbWet = 0.55; // Highly spacious delay wetness
+      logToConsole(`Dominant tone: Web (HTML/JS/CSS). Scale: F Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
+      logToConsole('[SYNTH PATCH] Loaded hollow retro Square-wave pad with deep delay spacing.', 'synth');
+    } else {
+      padOscillator = 'triangle'; // Warm Rhodes keyboard look
+      padAttack = 0.15; // Quick attack keys feel
+      padRelease = 2.0;
+      melodyOscillator = 'sine';
+      melodyAttack = 0.01;
+      bitcrusherWet = 0.0;
+      reverbWet = 0.4;
+      logToConsole(`Dominant tone: Python backend. Scale: F Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
+      logToConsole('[SYNTH PATCH] Loaded warm dynamic Triangle keyboard keys (Rhodes feel).', 'synth');
+    }
   }
 
+  // Apply Procedural Synth Sound Design to Synthesizers
   if (toneStarted) {
-    const jsInfo = codebase.languages.javascript || { files: 0 };
-    const htmlInfo = codebase.languages.html || { files: 0 };
-    const webDensity = (jsInfo.files + htmlInfo.files) / codebase.summary.totalFiles;
+    synthPad.set({ oscillator: { type: padOscillator } });
+    synthPad.set({
+      envelope: {
+        attack: padAttack,
+        release: padRelease
+      }
+    });
+
+    synthMelody.set({ oscillator: { type: melodyOscillator } });
+    synthMelody.set({
+      envelope: {
+        attack: melodyAttack
+      }
+    });
+
+    if (bitcrusher) bitcrusher.wet.value = bitcrusherWet;
+    if (reverb) reverb.wet.value = reverbWet;
+
+    // Adjust main filter brightness based on html/css files
     mainFilter.frequency.value = 650 + (webDensity * 400);
   }
 }
