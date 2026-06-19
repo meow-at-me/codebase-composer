@@ -358,6 +358,47 @@ function initializeAudio() {
   }
 }
 
+// Global Note Transposition Helpers
+const NOTE_SEMITONES = { 'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11 };
+const SEMITONE_NOTES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+function transposeNote(noteStr, semitones) {
+  if (!semitones) return noteStr;
+  const match = noteStr.match(/^([A-G][b#]?)([0-9])$/i);
+  if (!match) return noteStr;
+  
+  const pitchName = match[1];
+  const octave = parseInt(match[2]);
+  
+  let formattedPitch = pitchName.charAt(0).toUpperCase() + pitchName.slice(1);
+  let val = NOTE_SEMITONES[formattedPitch];
+  if (val === undefined) return noteStr;
+  
+  let newVal = val + semitones;
+  let newOctave = octave + Math.floor(newVal / 12);
+  let noteIndex = ((newVal % 12) + 12) % 12;
+  
+  return `${SEMITONE_NOTES[noteIndex]}${newOctave}`;
+}
+
+function transposeChordName(name, semitones) {
+  if (!semitones) return name;
+  const match = name.match(/^([A-G][b#]?)(.*)$/i);
+  if (!match) return name;
+  
+  const pitchName = match[1];
+  const suffix = match[2];
+  
+  let formattedPitch = pitchName.charAt(0).toUpperCase() + pitchName.slice(1);
+  let val = NOTE_SEMITONES[formattedPitch];
+  if (val === undefined) return name;
+  
+  let newVal = val + semitones;
+  let noteIndex = ((newVal % 12) + 12) % 12;
+  
+  return `${SEMITONE_NOTES[noteIndex]}${suffix}`;
+}
+
 // Music scales mapping
 let notesScale = [];
 let chordProgression = [];
@@ -429,7 +470,8 @@ function setupProceduralAudioParameters() {
   for (let i = 0; i < pathStr.length; i++) {
     hash = pathStr.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const progIndex = Math.abs(hash) % 3; // 3 progression variations
+  const keyOffset = Math.abs(hash) % 12; // 12 different transpositions (keys)
+  const progIndex = Math.abs(hash >> 2) % 8; // 8 different progression templates
 
   // Sound Design defaults
   let padOscillator = 'triangle';
@@ -446,10 +488,9 @@ function setupProceduralAudioParameters() {
 
   if (mainLang === 'cpp' || mainLang === 'shell' || mainLang === 'other') {
     activeMode = 'minor';
-    notesScale = ['D4', 'E4', 'F4', 'G4', 'A4', 'Bb4', 'C5', 'D5', 'E5', 'F5'];
     
     const minorProgs = [
-      // Prog 0: Dm9 - Bbmaj9 - Am9 - C9 (Standard tech/hardware vibe)
+      // Prog 0: Dm9 - Bbmaj9 - Am9 - C9 (i - VI - v - VII)
       {
         chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['Bb2', 'D3', 'F3', 'A3', 'C4'], ['A2', 'C3', 'E3', 'G3', 'B3'], ['C3', 'E3', 'G3', 'Bb3', 'D4']],
         names: ['Dm9', 'Bbmaj9', 'Am9', 'C9'],
@@ -466,13 +507,46 @@ function setupProceduralAudioParameters() {
         chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['C3', 'E3', 'G3', 'Bb3', 'D4'], ['Bb2', 'D3', 'F3', 'A3', 'C4'], ['A2', 'C3', 'E3', 'G3', 'B3']],
         names: ['Dm9', 'C9', 'Bbmaj9', 'Am9'],
         roots: ['D2', 'C2', 'Bb1', 'A1']
+      },
+      // Prog 3: Dm9 - Em7b5 - A7alt - Dm9 (i - ii° - V7 - i)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['E3', 'G3', 'Bb3', 'D4', 'F4'], ['A2', 'C#3', 'G3', 'Bb3', 'F4'], ['D3', 'F3', 'A3', 'C4', 'E4']],
+        names: ['Dm9', 'Em7b5', 'A7alt', 'Dm9'],
+        roots: ['D2', 'E2', 'A1', 'D2']
+      },
+      // Prog 4: Dm9 - Bbmaj7 - Gm9 - Asus7 (i - VI - iv - V7sus)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['Bb2', 'D3', 'F3', 'A3', 'D4'], ['G2', 'Bb3', 'D4', 'F4', 'A4'], ['A2', 'D3', 'E3', 'G3', 'C4']],
+        names: ['Dm9', 'Bbmaj7', 'Gm9', 'Asus7'],
+        roots: ['D2', 'Bb1', 'G1', 'A1']
+      },
+      // Prog 5: Dm9 - Cmaj7 - Bbmaj7 - A7alt (i - VII - VI - V7)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['C3', 'E3', 'G3', 'B3', 'E4'], ['Bb2', 'D3', 'F3', 'A3', 'D4'], ['A2', 'C#3', 'G3', 'Bb3', 'F4']],
+        names: ['Dm9', 'Cmaj7', 'Bbmaj7', 'A7alt'],
+        roots: ['D2', 'C2', 'Bb1', 'A1']
+      },
+      // Prog 6: Dm9 - Fmaj9 - Bbmaj9 - C9 (i - III - VI - VII)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['F2', 'A3', 'C4', 'E4', 'G4'], ['Bb2', 'D3', 'F3', 'A3', 'C4'], ['C3', 'E3', 'G3', 'Bb3', 'D4']],
+        names: ['Dm9', 'Fmaj9', 'Bbmaj9', 'C9'],
+        roots: ['D2', 'F2', 'Bb1', 'C2']
+      },
+      // Prog 7: Dm9 - G7 - Cmaj9 - Fmaj9 (ii - V - I - IV)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['G2', 'B3', 'D4', 'F4', 'B4'], ['C3', 'E3', 'G3', 'B3', 'D4'], ['F2', 'A3', 'C4', 'E4', 'G4']],
+        names: ['Dm9', 'G7', 'Cmaj9', 'Fmaj9'],
+        roots: ['D2', 'G1', 'C2', 'F1']
       }
     ];
 
     const chosen = minorProgs[progIndex];
-    chordProgression = chosen.chords;
-    chordNamesList = chosen.names;
-    bassRootNotes = chosen.roots;
+    chordProgression = chosen.chords.map(chord => chord.map(note => transposeNote(note, keyOffset)));
+    chordNamesList = chosen.names.map(name => transposeChordName(name, keyOffset));
+    bassRootNotes = chosen.roots.map(note => transposeNote(note, keyOffset));
+    notesScale = ['D4', 'E4', 'F4', 'G4', 'A4', 'Bb4', 'C5', 'D5', 'E5', 'F5'].map(note => transposeNote(note, keyOffset));
+
+    const rootKeyName = transposeChordName('D', keyOffset);
 
     // C++ / Hardware Sound Design: Gritty analogue feel
     padOscillator = 'sawtooth'; // Rich, buzzy sawtooth (heavy filter will make it warm)
@@ -483,11 +557,10 @@ function setupProceduralAudioParameters() {
     bitcrusherWet = 0.2; // Subtle digital crunch
     reverbWet = 0.45;
 
-    logToConsole(`Dominant tone: C++/Shell. Scale: D Minor Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
+    logToConsole(`Dominant tone: C++/Shell. Scale: ${rootKeyName} Minor Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
     logToConsole('[SYNTH PATCH] Loaded heavy filtered Sawtooth pad with 12-bit sampler crunch.', 'synth');
   } else {
     activeMode = 'major';
-    notesScale = ['F4', 'G4', 'A4', 'C5', 'D5', 'F5', 'G5', 'A5', 'C6', 'D6'];
     
     const majorProgs = [
       // Prog 0: Fmaj9 - G9 - Em9 - Am9 (IV - V - iii - vi)
@@ -507,13 +580,46 @@ function setupProceduralAudioParameters() {
         chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['F2', 'Ab3', 'C4', 'Eb4', 'G4'], ['C3', 'E3', 'G3', 'B3', 'D4'], ['C3', 'E3', 'G3', 'B3', 'D4']],
         names: ['Fmaj9', 'Fm9', 'Cmaj9', 'Cmaj9'],
         roots: ['F1', 'F1', 'C2', 'C2']
+      },
+      // Prog 3: Fmaj9 - Bbmaj9 - G7 - C9 (I - IV - II7 - V)
+      {
+        chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['Bb2', 'D3', 'F3', 'A3', 'C4'], ['G2', 'B3', 'D4', 'F4', 'A4'], ['C3', 'E3', 'G3', 'Bb3', 'D4']],
+        names: ['Fmaj9', 'Bbmaj9', 'G7', 'C9'],
+        roots: ['F1', 'Bb1', 'G1', 'C2']
+      },
+      // Prog 4: Fmaj9 - Dm9 - Gm9 - C9 (I - vi - ii - V)
+      {
+        chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['D3', 'F3', 'A3', 'C4', 'E4'], ['G2', 'Bb3', 'D4', 'F4', 'A4'], ['C3', 'E3', 'G3', 'Bb3', 'D4']],
+        names: ['Fmaj9', 'Dm9', 'Gm9', 'C9'],
+        roots: ['F1', 'D2', 'G1', 'C2']
+      },
+      // Prog 5: Fmaj9 - A7 - Dm9 - G9 (I - VI7 - ii - V7)
+      {
+        chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['A2', 'C#3', 'G3', 'C#4', 'E4'], ['D3', 'F3', 'A3', 'C4', 'E4'], ['G2', 'B3', 'D4', 'F4', 'A4']],
+        names: ['Fmaj9', 'A7', 'Dm9', 'G9'],
+        roots: ['F1', 'A1', 'D2', 'G1']
+      },
+      // Prog 6: Fmaj9 - Ebmaj9 - Dbmaj9 - C9 (I - bVII - bVI - V)
+      {
+        chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['Eb2', 'G3', 'Bb3', 'D4', 'F4'], ['Db2', 'F3', 'Ab3', 'C4', 'Eb4'], ['C3', 'E3', 'G3', 'Bb3', 'D4']],
+        names: ['Fmaj9', 'Ebmaj9', 'Dbmaj9', 'C9'],
+        roots: ['F1', 'Eb1', 'Db1', 'C2']
+      },
+      // Prog 7: Fmaj9 - Gm9 - A7 - Dm9 (I - ii - III7 - vi)
+      {
+        chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['G2', 'Bb3', 'D4', 'F4', 'A4'], ['A2', 'C#3', 'G3', 'C#4', 'E4'], ['D3', 'F3', 'A3', 'C4', 'E4']],
+        names: ['Fmaj9', 'Gm9', 'A7', 'Dm9'],
+        roots: ['F1', 'G1', 'A1', 'D2']
       }
     ];
 
     const chosen = majorProgs[progIndex];
-    chordProgression = chosen.chords;
-    chordNamesList = chosen.names;
-    bassRootNotes = chosen.roots;
+    chordProgression = chosen.chords.map(chord => chord.map(note => transposeNote(note, keyOffset)));
+    chordNamesList = chosen.names.map(name => transposeChordName(name, keyOffset));
+    bassRootNotes = chosen.roots.map(note => transposeNote(note, keyOffset));
+    notesScale = ['F4', 'G4', 'A4', 'C5', 'D5', 'F5', 'G5', 'A5', 'C6', 'D6'].map(note => transposeNote(note, keyOffset));
+
+    const rootKeyName = transposeChordName('F', keyOffset);
 
     // Web technologies vs Python Sound Design
     if (webDensity > 0.4) {
@@ -524,7 +630,7 @@ function setupProceduralAudioParameters() {
       melodyAttack = 0.03;
       bitcrusherWet = 0.0;
       reverbWet = 0.55; // Highly spacious delay wetness
-      logToConsole(`Dominant tone: Web (HTML/JS/CSS). Scale: F Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
+      logToConsole(`Dominant tone: Web (HTML/JS/CSS). Scale: ${rootKeyName} Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
       logToConsole('[SYNTH PATCH] Loaded hollow retro Square-wave pad with deep delay spacing.', 'synth');
     } else {
       padOscillator = 'triangle'; // Warm Rhodes keyboard look
@@ -534,7 +640,7 @@ function setupProceduralAudioParameters() {
       melodyAttack = 0.01;
       bitcrusherWet = 0.0;
       reverbWet = 0.4;
-      logToConsole(`Dominant tone: Python backend. Scale: F Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
+      logToConsole(`Dominant tone: Python backend. Scale: ${rootKeyName} Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
       logToConsole('[SYNTH PATCH] Loaded warm dynamic Triangle keyboard keys (Rhodes feel).', 'synth');
     }
   }
