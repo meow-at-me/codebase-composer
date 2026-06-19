@@ -48,6 +48,8 @@ const ctx = canvas.getContext('2d');
 const scanPathInput = document.getElementById('scan-path-input');
 const geminiKeyInput = document.getElementById('gemini-key-input');
 const geminiModeToggle = document.getElementById('gemini-mode-toggle');
+const geminiTempSlider = document.getElementById('gemini-temp-slider');
+const tempValSpan = document.getElementById('temp-val');
 
 const helpBtn = document.getElementById('help-btn');
 const helpDrawer = document.getElementById('help-drawer');
@@ -126,13 +128,15 @@ async function fetchCodebaseData() {
 
 async function fetchGeminiMusicDna(apiKey) {
   logToConsole('Connecting to Gemini AI for musical DNA composition...', 'system');
+  const temperature = parseFloat(geminiTempSlider.value);
   try {
     const response = await fetch('/api/gemini-mood', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         apiKey: apiKey,
-        codebaseData: codebase
+        codebaseData: codebase,
+        temperature: temperature
       })
     });
     
@@ -325,30 +329,74 @@ function setupProceduralAudioParameters() {
   Tone.Transport.bpm.value = currentBpm;
   liveBpmSpan.innerText = `${currentBpm} BPM`;
 
+  // Simple hash based on folder path to pick from different progressions (avoids all projects sounding same)
+  let hash = 0;
+  const pathStr = codebase.workspacePath || '';
+  for (let i = 0; i < pathStr.length; i++) {
+    hash = pathStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const progIndex = Math.abs(hash) % 3; // 3 progression variations
+
   if (mainLang === 'cpp' || mainLang === 'shell' || mainLang === 'other') {
     activeMode = 'minor';
     notesScale = ['D4', 'E4', 'F4', 'G4', 'A4', 'Bb4', 'C5', 'D5', 'E5', 'F5'];
-    chordProgression = [
-      ['D3', 'F3', 'A3', 'C4', 'E4'], // Dm9
-      ['Bb2', 'D3', 'F3', 'A3', 'C4'], // Bbmaj9
-      ['A2', 'C3', 'E3', 'G3', 'B3'], // Am9
-      ['C3', 'E3', 'G3', 'Bb3', 'D4']  // C9
+    
+    const minorProgs = [
+      // Prog 0: Dm9 - Bbmaj9 - Am9 - C9 (Standard tech/hardware vibe)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['Bb2', 'D3', 'F3', 'A3', 'C4'], ['A2', 'C3', 'E3', 'G3', 'B3'], ['C3', 'E3', 'G3', 'Bb3', 'D4']],
+        names: ['Dm9', 'Bbmaj9', 'Am9', 'C9'],
+        roots: ['D2', 'Bb1', 'A1', 'C2']
+      },
+      // Prog 1: Dm9 - Gm9 - C9 - Fmaj9 (i - iv - VII - III)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['G2', 'Bb3', 'D4', 'F4', 'A4'], ['C3', 'E3', 'G3', 'Bb3', 'D4'], ['F2', 'A3', 'C4', 'E4', 'G4']],
+        names: ['Dm9', 'Gm9', 'C9', 'Fmaj9'],
+        roots: ['D2', 'G1', 'C2', 'F1']
+      },
+      // Prog 2: Dm9 - C9 - Bbmaj9 - Am9 (i - VII - VI - v)
+      {
+        chords: [['D3', 'F3', 'A3', 'C4', 'E4'], ['C3', 'E3', 'G3', 'Bb3', 'D4'], ['Bb2', 'D3', 'F3', 'A3', 'C4'], ['A2', 'C3', 'E3', 'G3', 'B3']],
+        names: ['Dm9', 'C9', 'Bbmaj9', 'Am9'],
+        roots: ['D2', 'C2', 'Bb1', 'A1']
+      }
     ];
-    chordNamesList = ['Dm9', 'BbMaj9', 'Am9', 'C9'];
-    bassRootNotes = ['D2', 'Bb1', 'A1', 'C2'];
-    logToConsole('Dominant tone: C++/Shell. Scale set to D Minor (Moody).', 'synth');
+
+    const chosen = minorProgs[progIndex];
+    chordProgression = chosen.chords;
+    chordNamesList = chosen.names;
+    bassRootNotes = chosen.roots;
+    logToConsole(`Dominant tone: C++/Shell. Scale: D Minor Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
   } else {
     activeMode = 'major';
     notesScale = ['F4', 'G4', 'A4', 'C5', 'D5', 'F5', 'G5', 'A5', 'C6', 'D6'];
-    chordProgression = [
-      ['F2', 'A3', 'C4', 'E4', 'G4'],  // Fmaj9
-      ['G2', 'B3', 'D4', 'F4', 'A4'],  // G9
-      ['E2', 'G3', 'B3', 'D4', 'F4'],  // Em9
-      ['A2', 'C3', 'E3', 'G3', 'B3']   // Am9
+    
+    const majorProgs = [
+      // Prog 0: Fmaj9 - G9 - Em9 - Am9 (IV - V - iii - vi)
+      {
+        chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['G2', 'B3', 'D4', 'F4', 'A4'], ['E2', 'G3', 'B3', 'D4', 'F4'], ['A2', 'C3', 'E3', 'G3', 'B3']],
+        names: ['Fmaj9', 'G9', 'Em9', 'Am9'],
+        roots: ['F1', 'G1', 'E1', 'A1']
+      },
+      // Prog 1: Cmaj9 - Am9 - Fmaj9 - G9 (I - vi - IV - V)
+      {
+        chords: [['C3', 'E3', 'G3', 'B3', 'D4'], ['A2', 'C3', 'E3', 'G3', 'B3'], ['F2', 'A3', 'C4', 'E4', 'G4'], ['G2', 'B3', 'D4', 'F4', 'A4']],
+        names: ['Cmaj9', 'Am9', 'Fmaj9', 'G9'],
+        roots: ['C2', 'A1', 'F1', 'G1']
+      },
+      // Prog 2: Fmaj9 - Fm9 - Cmaj9 - Cmaj9 (IV - iv - I - I)
+      {
+        chords: [['F2', 'A3', 'C4', 'E4', 'G4'], ['F2', 'Ab3', 'C4', 'Eb4', 'G4'], ['C3', 'E3', 'G3', 'B3', 'D4'], ['C3', 'E3', 'G3', 'B3', 'D4']],
+        names: ['Fmaj9', 'Fm9', 'Cmaj9', 'Cmaj9'],
+        roots: ['F1', 'F1', 'C2', 'C2']
+      }
     ];
-    chordNamesList = ['Fmaj9', 'G9', 'Em9', 'Am9'];
-    bassRootNotes = ['F1', 'G1', 'E1', 'A1'];
-    logToConsole('Dominant tone: Python/Web technologies. Scale set to F Major (Jazzy).', 'synth');
+
+    const chosen = majorProgs[progIndex];
+    chordProgression = chosen.chords;
+    chordNamesList = chosen.names;
+    bassRootNotes = chosen.roots;
+    logToConsole(`Dominant tone: Python/Web technologies. Scale: F Major Prog #${progIndex} (${chordNamesList.join(', ')}).`, 'synth');
   }
 
   if (toneStarted) {
@@ -570,6 +618,11 @@ function loadSavedSettings() {
   if (savedToggle === 'true') {
     geminiModeToggle.checked = true;
   }
+  const savedTemp = localStorage.getItem('lofi_gemini_temperature');
+  if (savedTemp) {
+    geminiTempSlider.value = savedTemp;
+    tempValSpan.innerText = savedTemp;
+  }
 }
 
 // Save config when changed
@@ -578,6 +631,10 @@ geminiKeyInput.addEventListener('input', () => {
 });
 geminiModeToggle.addEventListener('change', () => {
   localStorage.setItem('lofi_gemini_mode_active', geminiModeToggle.checked);
+});
+geminiTempSlider.addEventListener('input', () => {
+  tempValSpan.innerText = geminiTempSlider.value;
+  localStorage.setItem('lofi_gemini_temperature', geminiTempSlider.value);
 });
 
 // Event Listeners

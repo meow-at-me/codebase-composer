@@ -162,7 +162,7 @@ app.get('/api/codebase', (req, res) => {
 
 // Gemini AI Music DNA Generation Endpoint
 app.post('/api/gemini-mood', async (req, res) => {
-  const { apiKey, codebaseData } = req.body;
+  const { apiKey, codebaseData, temperature } = req.body;
   const key = apiKey || process.env.GEMINI_API_KEY;
 
   if (!key) {
@@ -203,7 +203,8 @@ Do not wrap it in markdown. Just return the JSON object.`;
           }]
         }],
         generationConfig: {
-          responseMimeType: 'application/json'
+          responseMimeType: 'application/json',
+          temperature: typeof temperature === 'number' ? Math.max(0, Math.min(2, temperature)) : 1.0
         }
       })
     });
