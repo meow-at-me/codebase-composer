@@ -556,19 +556,10 @@ geminiModeToggle.addEventListener('change', () => {
 playBtn.addEventListener('click', togglePlayback);
 scanBtn.addEventListener('click', async () => {
   logToConsole('Initiating sync scan...', 'system');
-  
-  // If playing, pause first to safely reset scheduled events
-  const wasPlaying = isPlaying;
-  if (isPlaying) {
-    await togglePlayback();
-  }
-  
   await fetchCodebaseData();
-  
-  if (wasPlaying) {
-    await togglePlayback();
-  }
+  logToConsole('Sync scan applied in real-time!', 'system');
 });
+
 
 // Initial Scan on Load
 window.addEventListener('load', () => {
