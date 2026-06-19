@@ -84,7 +84,10 @@ async function fetchCodebaseData() {
   
   try {
     const response = await fetch(url);
-    if (!response.ok) throw new Error('API server error');
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Server status ${response.status}`);
+    }
     
     codebase = await response.json();
     
@@ -216,6 +219,9 @@ function getMockData() {
 function initializeAudio() {
   if (toneStarted) return;
   
+  // Prevent CPU audio glitches by setting buffer latency hint to playback
+  Tone.context.latencyHint = "playback";
+  
   limiter = new Tone.Limiter(-1).toDestination();
   mainFilter = new Tone.Filter(850, "lowpass").connect(limiter);
   
@@ -226,7 +232,7 @@ function initializeAudio() {
   analyser = new Tone.Analyser("fft", 256);
   mainFilter.connect(analyser);
 
-  volAmbient = new Tone.Volume(-15).connect(mainFilter);
+  volAmbient = new Tone.Volume(-25).connect(mainFilter);
   volChords = new Tone.Volume(-10).connect(mainFilter);
   volBass = new Tone.Volume(-12).connect(mainFilter);
   volMelody = new Tone.Volume(-8).connect(delay);
@@ -237,10 +243,17 @@ function initializeAudio() {
   rainNoise.connect(rainFilter);
   rainNoise.volume.value = -12;
 
+  // Bandpass filter to make white noise vinyl crackle sound warm and analog, avoiding harsh digital clicks
+  const crackleFilter = new Tone.Filter({
+    type: "bandpass",
+    frequency: 1000,
+    Q: 3
+  }).connect(volAmbient);
+
   noiseSynth = new Tone.NoiseSynth({
     noise: { type: "white" },
-    envelope: { attack: 0.001, decay: 0.01, sustain: 0 }
-  }).connect(volAmbient);
+    envelope: { attack: 0.001, decay: 0.005, sustain: 0 }
+  }).connect(crackleFilter);
 
   synthPad = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: "triangle" },

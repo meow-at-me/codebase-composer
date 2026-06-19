@@ -129,6 +129,14 @@ app.get('/api/codebase', (req, res) => {
   
   if (req.query.path) {
     let p = req.query.path.trim();
+
+    // Convert Windows paths (e.g. C:\Users\... or C:/Users/...) to WSL mount paths (/mnt/c/Users/...)
+    if (/^[a-zA-Z]:\\/.test(p) || /^[a-zA-Z]:\//.test(p)) {
+      const driveLetter = p[0].toLowerCase();
+      const relativePath = p.slice(3).replace(/\\/g, '/');
+      p = `/mnt/${driveLetter}/${relativePath}`;
+    }
+
     // Resolve home directory shortener
     if (p.startsWith('~')) {
       p = p.replace('~', defaultDir);
