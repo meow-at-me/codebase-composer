@@ -62,6 +62,7 @@ const explorerCurrentPath = document.getElementById('explorer-current-path');
 const explorerSelectBtn = document.getElementById('explorer-select-btn');
 const explorerList = document.getElementById('explorer-list');
 const dashboardLoadingOverlay = document.getElementById('dashboard-loading-overlay');
+const loadingOverlayText = document.getElementById('loading-overlay-text');
 
 // --- Helper Functions ---
 
@@ -93,9 +94,10 @@ async function fetchCodebaseData() {
   logToConsole(`Requesting scan for target path: ${customPath || '[Default Workspaces]'}`, 'system');
   
   // Show spinner, disable scan button
+  if (loadingOverlayText) loadingOverlayText.innerText = 'Scanning codebase files...';
   dashboardLoadingOverlay.classList.add('active');
   scanBtn.disabled = true;
-  scanBtn.innerText = 'Scanning...';
+  scanBtn.innerHTML = '<span class="spinner-sm"></span>Scanning...';
   
   try {
     const response = await fetch(url);
@@ -140,6 +142,8 @@ async function fetchCodebaseData() {
 
 async function fetchGeminiMusicDna(apiKey) {
   logToConsole('Connecting to Gemini AI for musical DNA composition...', 'system');
+  if (loadingOverlayText) loadingOverlayText.innerText = 'AI Composing music DNA...';
+  scanBtn.innerHTML = '<span class="spinner-sm"></span>Composing...';
   const temperature = parseFloat(geminiTempSlider.value);
   try {
     const response = await fetch('/api/gemini-mood', {
@@ -830,7 +834,13 @@ let explorerPath = '/home/user';
 
 async function loadDirectories(dirPath) {
   try {
-    explorerCurrentPath.innerText = 'Loading folders...';
+    explorerCurrentPath.innerText = 'Loading...';
+    explorerList.innerHTML = `
+      <div class="explorer-loading">
+        <div class="spinner-md"></div>
+        <span>Loading folders...</span>
+      </div>
+    `;
     let url = `/api/browse?path=${encodeURIComponent(dirPath)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Directory browse request failed');
@@ -874,6 +884,11 @@ async function loadDirectories(dirPath) {
   } catch (err) {
     console.error('Error loading directories:', err);
     explorerCurrentPath.innerText = 'Failed to load directory';
+    explorerList.innerHTML = `
+      <div class="explorer-loading" style="color: var(--accent-primary);">
+        ⚠️ Failed to load folders
+      </div>
+    `;
   }
 }
 

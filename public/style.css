@@ -947,11 +947,13 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(10, 8, 20, 0.75);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background: rgba(10, 8, 20, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 10;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
   justify-content: center;
   align-items: center;
   border-radius: 20px;
@@ -975,8 +977,64 @@ body {
   box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
 }
 
+.loading-overlay-text {
+  color: var(--accent-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+  letter-spacing: 0.05em;
+  animation: pulse-opacity 1.5s ease-in-out infinite alternate;
+}
+
+/* Small spinner inline for buttons */
+.spinner-sm {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  border-top-color: var(--accent-secondary);
+  border-bottom-color: var(--accent-primary);
+  animation: spin-clockwise 1s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+/* Medium spinner for folder list loading */
+.spinner-md {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--accent-secondary);
+  border-bottom-color: var(--accent-primary);
+  animation: spin-clockwise 1s linear infinite;
+  margin-bottom: 8px;
+}
+
+.explorer-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  color: var(--color-text-dim);
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+}
+
+.explorer-loading span {
+  animation: pulse-opacity 1.5s ease-in-out infinite alternate;
+}
+
 @keyframes spin-clockwise {
   to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-opacity {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
 }
 
 /* Footer styling */
