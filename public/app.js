@@ -53,6 +53,12 @@ const helpBtn = document.getElementById('help-btn');
 const helpDrawer = document.getElementById('help-drawer');
 const closeHelpBtn = document.getElementById('close-help-btn');
 
+const browseBtn = document.getElementById('browse-btn');
+const explorerDropdown = document.getElementById('explorer-dropdown');
+const explorerCurrentPath = document.getElementById('explorer-current-path');
+const explorerSelectBtn = document.getElementById('explorer-select-btn');
+const explorerList = document.getElementById('explorer-list');
+
 // --- Helper Functions ---
 
 function logToConsole(text, type = 'system') {
@@ -603,4 +609,83 @@ helpBtn.addEventListener('click', () => {
 closeHelpBtn.addEventListener('click', () => {
   helpDrawer.classList.remove('open');
 });
+
+// --- Directory Explorer Navigation ---
+let explorerPath = '/home/user';
+
+async function loadDirectories(dirPath) {
+  try {
+    explorerCurrentPath.innerText = 'Loading folders...';
+    let url = `/api/browse?path=${encodeURIComponent(dirPath)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Directory browse request failed');
+    const data = await res.json();
+    
+    explorerPath = data.currentPath;
+    explorerCurrentPath.innerText = data.currentPath;
+    explorerList.innerHTML = '';
+    
+    // Parent Directory (📁 ..)
+    if (data.parentPath) {
+      const upItem = document.createElement('div');
+      upItem.className = 'explorer-item parent-dir';
+      upItem.innerHTML = '📁 .. (Up a level)';
+      upItem.addEventListener('click', () => {
+        loadDirectories(data.parentPath);
+      });
+      explorerList.appendChild(upItem);
+    }
+    
+    // Subdirectories
+    if (data.subdirs.length === 0) {
+      const emptyItem = document.createElement('div');
+      emptyItem.className = 'explorer-item';
+      emptyItem.style.fontStyle = 'italic';
+      emptyItem.style.color = 'var(--color-text-dim)';
+      emptyItem.innerHTML = 'No subdirectories found';
+      explorerList.appendChild(emptyItem);
+    } else {
+      data.subdirs.forEach(dir => {
+        const item = document.createElement('div');
+        item.className = 'explorer-item';
+        item.innerHTML = `📁 ${dir}`;
+        item.addEventListener('click', () => {
+          const next = explorerPath === '/' ? `/${dir}` : `${explorerPath}/${dir}`;
+          loadDirectories(next);
+        });
+        explorerList.appendChild(item);
+      });
+    }
+  } catch (err) {
+    console.error('Error loading directories:', err);
+    explorerCurrentPath.innerText = 'Failed to load directory';
+  }
+}
+
+// Toggle folder explorer
+browseBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isOpen = explorerDropdown.classList.toggle('open');
+  if (isOpen) {
+    const current = scanPathInput.value.trim() || '/home/user';
+    loadDirectories(current);
+  }
+});
+
+// Select folder button click
+explorerSelectBtn.addEventListener('click', () => {
+  scanPathInput.value = explorerPath;
+  explorerDropdown.classList.remove('open');
+  scanBtn.click(); // Trigger scan sync
+});
+
+// Close explorer dropdown if clicked outside
+document.addEventListener('click', (e) => {
+  if (explorerDropdown.classList.contains('open')) {
+    if (!explorerDropdown.contains(e.target) && e.target !== browseBtn) {
+      explorerDropdown.classList.remove('open');
+    }
+  }
+});
+
 

@@ -224,6 +224,57 @@ Do not wrap it in markdown. Just return the JSON object.`;
   }
 });
 
+// Directory Browsing Endpoint for UI Folder Explorer
+app.get('/api/browse', (req, res) => {
+  const defaultDir = path.dirname(__dirname); // /home/user
+  let targetDir = defaultDir;
+  
+  if (req.query.path) {
+    let p = req.query.path.trim();
+    if (p.startsWith('~')) {
+      p = p.replace('~', defaultDir);
+    }
+    if (/^[a-zA-Z]:\\/.test(p) || /^[a-zA-Z]:\//.test(p)) {
+      const driveLetter = p[0].toLowerCase();
+      const relativePath = p.slice(3).replace(/\\/g, '/');
+      p = `/mnt/${driveLetter}/${relativePath}`;
+    }
+    if (!path.isAbsolute(p)) {
+      targetDir = path.resolve(defaultDir, p);
+    } else {
+      targetDir = path.resolve(p);
+    }
+  }
+
+  try {
+    if (!fs.existsSync(targetDir)) {
+      return res.status(404).json({ error: 'Directory not found' });
+    }
+    
+    const items = fs.readdirSync(targetDir, { withFileTypes: true });
+    const subdirs = items
+      .filter(item => {
+        if (IGNORE_DIRS.has(item.name)) return false;
+        try {
+          const fullPath = path.join(targetDir, item.name);
+          return item.isDirectory() && fs.existsSync(fullPath);
+        } catch (e) {
+          return false;
+        }
+      })
+      .map(item => item.name)
+      .sort();
+
+    res.json({
+      currentPath: targetDir,
+      parentPath: targetDir === '/' ? null : path.dirname(targetDir),
+      subdirs: subdirs
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Lo-Fi Codebase Synthesizer Server running on http://localhost:${PORT}`);
 });

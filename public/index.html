@@ -62,9 +62,22 @@
       </div>
       
       <div class="header-center">
-        <div class="header-path-box">
-          <input type="text" id="scan-path-input" placeholder="Type absolute path (e.g. /home/user)">
-          <button id="scan-btn" class="btn btn-secondary btn-sm">Scan & Sync</button>
+        <div class="header-path-box-wrapper">
+          <div class="header-path-box">
+            <button id="browse-btn" class="browse-btn-icon" title="Browse Folders">📁</button>
+            <input type="text" id="scan-path-input" placeholder="Type absolute path (e.g. /home/user)">
+            <button id="scan-btn" class="btn btn-secondary btn-sm">Scan & Sync</button>
+          </div>
+          <!-- Directory Explorer Dropdown -->
+          <div id="explorer-dropdown" class="explorer-dropdown">
+            <div class="explorer-header">
+              <span id="explorer-current-path" class="explorer-path">Loading...</span>
+              <button id="explorer-select-btn" class="btn btn-primary btn-xs">Select</button>
+            </div>
+            <div class="explorer-list" id="explorer-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
         </div>
       </div>
 
