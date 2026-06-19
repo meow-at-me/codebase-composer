@@ -418,7 +418,11 @@ function setupProceduralAudioParameters() {
     chordNamesList = geminiDna.chordNames || [];
     activeMode = geminiDna.scale || 'minor';
     
-    Tone.Transport.bpm.value = currentBpm;
+    if (toneStarted) {
+      Tone.Transport.bpm.rampTo(currentBpm, 1.2);
+    } else {
+      Tone.Transport.bpm.value = currentBpm;
+    }
     liveBpmSpan.innerText = `${currentBpm} BPM`;
     logToConsole(`[GEMINI DNA LOADED] Chords: ${chordNamesList.join(', ')} | Tempo: ${currentBpm} BPM`, 'synth');
 
@@ -461,7 +465,11 @@ function setupProceduralAudioParameters() {
   const mainLang = codebase.summary.mainLanguage.toLowerCase();
   
   currentBpm = Math.max(65, Math.min(80, 62 + Math.floor(totalLines / 2000)));
-  Tone.Transport.bpm.value = currentBpm;
+  if (toneStarted) {
+    Tone.Transport.bpm.rampTo(currentBpm, 1.2);
+  } else {
+    Tone.Transport.bpm.value = currentBpm;
+  }
   liveBpmSpan.innerText = `${currentBpm} BPM`;
 
   // Simple hash based on folder path to pick from different progressions (avoids all projects sounding same)
