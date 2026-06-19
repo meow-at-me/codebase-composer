@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codebase Lo-Fi Synth Station</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,400&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Tone.js for Web Audio Synthesis -->
+  <script src="https://unpkg.com/tone@14.8.49/build/Tone.js"></script>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glass-bg"></div>
+  <div class="noise-overlay"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="pulsing-dot"></div>
+        <h1>Codebase Lo-Fi Synth Station</h1>
+      </div>
+      <div class="workspace-tag">
+        <span class="label">Workspace:</span>
+        <span id="workspace-name" class="val">Scanning...</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-grid">
+      
+      <!-- Left Column: Visualizer & Player Controls -->
+      <section class="card player-card">
+        <div class="vinyl-container">
+          <div class="vinyl-disc" id="vinyl-disc">
+            <div class="vinyl-grooves"></div>
+            <div class="vinyl-label">
+              <div class="label-logo"></div>
+              <span id="now-playing-lang">SYS</span>
+            </div>
+          </div>
+          <div class="tonearm" id="tonearm"></div>
+        </div>
+
+        <div class="player-controls">
+          <button id="play-btn" class="btn btn-primary btn-large">
+            <span class="icon">▶</span> Play Codebase
+          </button>
+          
+          <div class="live-stats">
+            <div class="stat-row">
+              <span class="stat-lbl">Tempo:</span>
+              <span id="live-bpm" class="stat-val">72 BPM</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Current Chord:</span>
+              <span id="live-chord" class="stat-val">None</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Active Synth:</span>
+              <span id="live-synth" class="stat-val">Idle</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audio Channels Mixer -->
+        <div class="mixer-section">
+          <h3>Sound Mixer</h3>
+          <div class="mixer-grid">
+            <div class="mixer-channel">
+              <label for="vol-ambient">Crackle & Rain</label>
+              <input type="range" id="vol-ambient" min="-40" max="0" value="-15" step="1">
+            </div>
+            <div class="mixer-channel">
+              <label for="vol-chords">Chords (Warm Pads)</label>
+              <input type="range" id="vol-chords" min="-40" max="0" value="-10" step="1">
+            </div>
+            <div class="mixer-channel">
+              <label for="vol-bass">Deep Bass</label>
+              <input type="range" id="vol-bass" min="-40" max="0" value="-12" step="1">
+            </div>
+            <div class="mixer-channel">
+              <label for="vol-melody">Melody (Rhodes/Piano)</label>
+              <input type="range" id="vol-melody" min="-40" max="0" value="-8" step="1">
+            </div>
+            <div class="mixer-channel">
+              <label for="vol-drums">Drums (Kick & Snare)</label>
+              <input type="range" id="vol-drums" min="-40" max="0" value="-8" step="1">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center/Right Column: Codebase Stats Dashboard -->
+      <section class="dashboard-column">
+        
+        <!-- Settings & Scan Target (Plugin feel) -->
+        <div class="card settings-card">
+          <h2>Configuration & Settings</h2>
+          
+          <div class="settings-grid">
+            <div class="input-group">
+              <label for="scan-path-input">Scan Target Path</label>
+              <div class="row-inputs">
+                <input type="text" id="scan-path-input" placeholder="e.g. /home/user" value="">
+                <button id="scan-btn" class="btn btn-secondary">Scan & Sync</button>
+              </div>
+            </div>
+            
+            <div class="input-group">
+              <label for="gemini-key-input">Gemini API Key (Optional)</label>
+              <div class="row-inputs">
+                <input type="password" id="gemini-key-input" placeholder="AI-composed music DNA">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="gemini-mode-toggle">
+                  <span class="slider"></span>
+                  <span class="toggle-lbl">AI Compose</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Codebase Stats Card -->
+        <div class="card stats-card">
+          <h2>Codebase Metrics Map</h2>
+          
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <div class="metric-num" id="stat-files">0</div>
+              <div class="metric-lbl">Total Files</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-num" id="stat-lines">0</div>
+              <div class="metric-lbl">Lines of Code</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-num" id="stat-dirs">0</div>
+              <div class="metric-lbl">Directories</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-num" id="stat-lang" style="text-transform: uppercase;">None</div>
+              <div class="metric-lbl">Dominant Tone</div>
+            </div>
+          </div>
+
+          <!-- Language Breakdown Progress Bar -->
+          <div class="language-breakdown">
+            <h3>Language Mapping to Instruments</h3>
+            <div class="progress-container" id="lang-progress-bar">
+              <!-- Dynamically populated -->
+            </div>
+            <div class="lang-legend" id="lang-legend-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Spectrum Visualizer -->
+        <div class="card visualizer-card">
+          <div class="card-header">
+            <h2>Audio Spectrum Waveform</h2>
+            <div class="visualizer-mode">
+              <span class="active">Spectrum</span>
+            </div>
+          </div>
+          <div class="canvas-wrapper">
+            <canvas id="visualizer-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Logs/AST Events -->
+        <div class="card console-card">
+          <div class="card-header">
+            <h2>Procedural Generator Console</h2>
+          </div>
+          <div class="console-log" id="console-output">
+            <div class="log-line system">[SYSTEM] Synthesizer initialized. Click "Play Codebase" to begin.</div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Made with 💜 in Antigravity Studio. Each chord, rhythm, and melody is procedurally mapped directly from your real code structure.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
