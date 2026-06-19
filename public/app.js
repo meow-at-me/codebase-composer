@@ -514,7 +514,8 @@ function setupProceduralAudioParameters() {
     if (reverb) reverb.wet.value = reverbWet;
 
     // Adjust main filter brightness based on html/css files
-    mainFilter.frequency.value = 650 + (webDensity * 400);
+    const validDensity = isNaN(webDensity) ? 0.0 : webDensity;
+    mainFilter.frequency.value = 650 + (validDensity * 400);
   }
 }
 
@@ -576,19 +577,26 @@ function startSequencer() {
 
   // 1. Chords & Bass Trigger Loop
   chordLoop = new Tone.Loop((time) => {
-    if (chordProgression.length === 0) return;
+    if (!chordProgression || chordProgression.length === 0) return;
     
     const notes = chordProgression[chordIndex % chordProgression.length];
-    const bassNote = bassRootNotes[chordIndex % bassRootNotes.length];
+    const bassRootList = bassRootNotes && bassRootNotes.length > 0 ? bassRootNotes : ['C2'];
+    const bassNote = bassRootList[chordIndex % bassRootList.length];
     
-    synthPad.triggerAttackRelease(notes, "1m", time, 0.4);
-    synthBass.triggerAttackRelease(bassNote, "2n", time, 0.5);
+    if (notes && notes.length > 0) {
+      synthPad.triggerAttackRelease(notes, "1m", time, 0.4);
+    }
+    
+    if (bassNote) {
+      synthBass.triggerAttackRelease(bassNote, "2n", time, 0.5);
+    }
 
     activeChordName = chordNamesList[chordIndex % chordNamesList.length] || 'Chord';
+    const bassName = bassNote ? bassNote.substring(0, 2) : 'C';
     
     Tone.Draw.schedule(() => {
       liveChordSpan.innerText = activeChordName;
-      logToConsole(`Chord Trigger: ${activeChordName} (Bass: ${bassNote.substring(0,2)})`, 'synth');
+      logToConsole(`Chord Trigger: ${activeChordName} (Bass: ${bassName})`, 'synth');
     }, time);
 
     chordIndex = (chordIndex + 1) % chordProgression.length;
@@ -672,18 +680,25 @@ function startSequencer() {
   // 5. Arpeggiator loop (Sparkles)
   let arpIndex = 0;
   arpLoop = new Tone.Loop((time) => {
-    if (chordProgression.length > 0 && Math.random() < 0.4) {
+    if (!chordProgression || chordProgression.length === 0) return;
+    
+    if (Math.random() < 0.4) {
       // Safely access current chord notes using chordIndex shared closure variable
       const activeChord = chordProgression[chordIndex % chordProgression.length];
       if (activeChord && activeChord.length > 0) {
         const baseNote = activeChord[arpIndex % activeChord.length];
         
-        // Pitch up by 1 or 2 octaves for sparkle effect
-        const noteName = baseNote.slice(0, -1);
-        const baseOctave = parseInt(baseNote.slice(-1));
-        const arpNote = `${noteName}${baseOctave + 1}`;
-        
-        synthArp.triggerAttackRelease(arpNote, "16n", time, 0.25);
+        if (baseNote) {
+          // Robust regex to split note name from octave and pitch up safely
+          const match = baseNote.match(/^([A-G][b#]?)([0-9])$/i);
+          if (match) {
+            const noteName = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+            const baseOctave = parseInt(match[2]);
+            const arpNote = `${noteName}${baseOctave + 1}`;
+            
+            synthArp.triggerAttackRelease(arpNote, "16n", time, 0.25);
+          }
+        }
         arpIndex++;
       }
     }
